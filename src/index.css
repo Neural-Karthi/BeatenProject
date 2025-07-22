@@ -1,0 +1,16 @@
+@keyframes shine {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.gold-shine {
+  animation: shine 2.5s linear infinite !important;
+  background: linear-gradient(90deg, #FFD700 20%, #FFFBEA 50%, #FFD700 80%) !important;
+  background-size: 200% auto !important;
+  background-position: 0% 0% !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: #FFD700 !important;
+  font-weight: 600;
+  display: inline-block;
+} 
