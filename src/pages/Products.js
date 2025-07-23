@@ -587,7 +587,8 @@ const Products = ({ mode }) => {
               sx={{
                 fontSize: "0.875rem",
                 fontWeight: 600,
-                color: "#000000",
+                color: mode === "dark" ? "#ffffff" : "#000000",
+      bgcolor: mode === "dark" ? "#1e1e1e" : "#f0f0f0", 
                 mb: 1,
               }}
             >
@@ -1210,50 +1211,65 @@ const Products = ({ mode }) => {
         color: mode === "dark" ? "#fff" : "inherit",
         minHeight: "100vh",
         transition: "background 0.3s, color 0.3s",
+     
         pb: { xs: 0, md: 4 },
         mb: 0,
       }}
     >
       {/* Edge-to-edge Search Bar */}
       <Box
-        sx={{
-          width: "100vw",
-          position: "relative",
-          left: "50%",
-          right: "50%",
-          transform: "translateX(-50%)",
-          bgcolor: mode === "dark" ? "#181818" : "#fff",
-          zIndex: 10,
-          mb: 2,
-        }}
-      >
-        <TextField
-          fullWidth
-          placeholder="Search products..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            endAdornment: searchQuery && (
-              <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setSearchQuery("")}>
-                  <CloseIcon />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            width: "100%",
-            "& .MuiOutlinedInput-root": {
-              borderRadius: "8px",
-            },
-          }}
-        />
-      </Box>
+  sx={{
+    width: "100vw",
+    position: "relative",
+    left: "50%",
+    right: "50%",
+    transform: "translateX(-50%)",
+    bgcolor: mode === "dark" ? "#000" : "#fff",
+    zIndex: 10,
+    mb: 2,
+  }}
+>
+  <TextField
+    fullWidth
+    placeholder="Search products..."
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    InputProps={{
+      startAdornment: (
+        <InputAdornment position="start">
+          <SearchIcon sx={{ color: mode === "dark" ? "#fff" : "#000" }} />
+        </InputAdornment>
+      ),
+      endAdornment: searchQuery && (
+        <InputAdornment position="end">
+          <IconButton size="small" onClick={() => setSearchQuery("")}>
+            <CloseIcon sx={{ color: mode === "dark" ? "#fff" : "#000" }} />
+          </IconButton>
+        </InputAdornment>
+      ),
+    }}
+    sx={{
+      width: "100%",
+      "& .MuiOutlinedInput-root": {
+        color: mode === "dark" ? "#fff" : "#000", // text color
+        "& fieldset": {
+          borderColor: mode === "dark" ? "#555" : "#ccc", // border color
+        },
+        "&:hover fieldset": {
+          borderColor: mode === "dark" ? "#888" : "#000",
+        },
+        "&.Mui-focused fieldset": {
+          borderColor: mode === "dark" ? "#fff" : "#000",
+        },
+      },
+      "& .MuiInputBase-input::placeholder": {
+        color: mode === "dark" ? "#aaa" : "#666", // placeholder color
+        opacity: 1,
+      },
+    }}
+  />
+</Box>
+
       <Container maxWidth="xl" disableGutters={isMobile} sx={{ pb: { xs: 0, md: 4 }, mb: 0 }}>
         {/* Mobile custom header and chips */}
         {isMobile && (
@@ -1265,15 +1281,16 @@ const Products = ({ mode }) => {
                 justifyContent: "center",
                 alignItems: "center",
                 py: 0,
-                px: 2,
+                px: 10,
                 borderBottom: "1px solid #eee",
+                
                 mt: 0,
                 mb: 0,
               }}
             >
               <Typography
                 variant="body2"
-                sx={{ color: "text.secondary", fontWeight: 500 }}
+                sx={{ color: mode === "dark" ? "#fff" : "#000" , fontWeight: 500 }}
               >
                 {filteredAndSortedProducts.length} Products
               </Typography>
@@ -1281,27 +1298,31 @@ const Products = ({ mode }) => {
             {mobileChips}
           </>
         )}
-        <Grid container spacing={{ xs: 0, md: 3 }} sx={{ mt: 0, pt: 0 }}>
+        <Grid container  spacing={{ xs: 0, md: 3 }} sx={{ mt: 0, pt: 0 }}>
           {/* Restore desktop sidebar filter */}
-          <Grid
-            item
-            xs={12}
-            md={2.5}
-            sx={{ display: { xs: "none", md: "block" } }}
-          >
-            <Paper
-              sx={{
-                p: 2,
-                display: { xs: "none", md: "block" },
-                position: "sticky",
-                top: "100px",
-                maxHeight: "calc(100vh - 100px)",
-                overflowY: "auto",
-              }}
-            >
-              {filterBody}
-            </Paper>
-          </Grid>
+         <Grid
+  item
+  xs={12}
+  md={2.5}
+  sx={{ display: { xs: "none", md: "block" } }}
+>
+  <Paper
+    sx={{
+      p: 2,
+      display: { xs: "none", md: "block" },
+      position: "sticky",
+      top: "100px",
+      maxHeight: "calc(100vh - 100px)",
+      overflowY: "auto",
+      bgcolor: mode === "dark" ? "#121212" : "#f9f9f9",
+      color: mode === "dark" ? "#fff" : "#000",
+      border: mode === "dark" ? "1px solid #333" : "1px solid #ddd",
+    }}
+  >
+    {filterBody}
+  </Paper>
+</Grid>
+
 
           {/* Products Grid */}
           <Grid item xs={12} md={9.5} sx={{ pt: 0, mt: 0 }}>
@@ -1439,9 +1460,11 @@ const Products = ({ mode }) => {
                           position: "relative",
                           overflow: "hidden",
                           borderRadius: 0,
+                          
                           boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
                           minHeight: 320,
-                          bgcolor: "background.paper",
+                         bgcolor: mode === "dark" ? "#000" : "#fff",
+
                           "&:hover": {
                             transform: "translateY(-2px)",
                             boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
@@ -1483,6 +1506,7 @@ const Products = ({ mode }) => {
                                   top: 8,
                                   right: 8,
                                   bgcolor: "rgba(255, 255, 255, 0.95)",
+                                  
                                   borderRadius: "50%",
                                   boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
                                   width: 30,
@@ -1544,7 +1568,7 @@ const Products = ({ mode }) => {
                                 WebkitBoxOrient: "vertical",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
-                                color: "text.primary",
+                                color: mode === "dark" ? "#ffffff" : "#000000",
                                 transition: "color 0.2s ease",
                                 "&:hover": {
                                   color: "primary.main",
@@ -1567,6 +1591,7 @@ const Products = ({ mode }) => {
                                 sx={{
                                   fontWeight: 600,
                                   fontSize: "1rem",
+                                  color: mode === "dark" ? "#ffffff" : "#000000",
                                 }}
                               >
                                 {formatPrice(product.price)}

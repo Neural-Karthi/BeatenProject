@@ -201,7 +201,7 @@ const App = () => {
           <AuthProvider>
             <CartProvider>
               <WishlistProvider>
-                <NewsScroller />
+                <NewsScroller mode={mode} />
                 {/* Pass mode and toggleColorMode to Header */}
                 <Header mode={mode} toggleColorMode={toggleColorMode} />
                 <Box

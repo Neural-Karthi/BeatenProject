@@ -76,8 +76,8 @@ const Contact = ({ mode }) => {
     {
       icon: <EmailIcon sx={{ fontSize: 40, color: cardColors.icon }} />,
       title: "Email",
-      content: "customersupport@beaten.in",
-      link: "mailto:customersupport@beaten.in",
+      content: "support@beaten.in",
+      link: "mailto:support@beaten.in",
     },
     {
       icon: <PhoneIcon sx={{ fontSize: 40, color: cardColors.icon }} />,
@@ -161,6 +161,7 @@ const Contact = ({ mode }) => {
         <Box
           sx={{
             textAlign: "center",
+            mt: { xs: 4, md: 10 },
             mb: { xs: 4, md: 10 },
             position: "relative",
           }}
@@ -526,13 +527,7 @@ const Contact = ({ mode }) => {
                           type="submit"
                           variant="contained"
                           size={isMobile ? "large" : "medium"}
-                          startIcon={
-                            isSubmitting ? (
-                              <CircularProgress size={20} color="inherit" />
-                            ) : (
-                              <SendIcon />
-                            )
-                          }
+                         
                           disabled={isSubmitting}
                           sx={{
                             backgroundColor: matteColors[900],

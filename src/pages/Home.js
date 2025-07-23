@@ -445,7 +445,7 @@ useEffect(() => {
             justifyContent: "center",
           }}
         >
-          <HeroSearchBar colorMode="dark" />
+          <HeroSearchBar colorMode={mode} />
         </Box>
 
         {/* Slide Indicators */}
@@ -512,7 +512,7 @@ useEffect(() => {
       {/* Shop By Category */}
       <Box
         sx={{
-          py: { xs: 4, md: 6 },
+          pt: { xs: 4, md: 6 },
           bgcolor: mode === "dark" ? "#181818" : "#fff",
         }}
       >
@@ -546,7 +546,7 @@ useEffect(() => {
               gridTemplateColumns: { md: "repeat(5, 1fr)" },
               gap: { xs: 2, md: 3 },
               overflowX: { xs: "auto", md: "visible" },
-              py: { xs: 3, md: 2 },
+              pt: { xs: 3, md: 2 },
               "&::-webkit-scrollbar": { display: "none" },
               msOverflowStyle: "none",
               scrollbarWidth: "none",
@@ -667,11 +667,10 @@ useEffect(() => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        backgroundColor: mode === "dark" ? "#fff" : "#181818",
-                        color: mode === "dark" ? "#7e7e7eff" : "#fff",
+                        backgroundColor: mode === "dark" ? "#181818" : "#fff",
+                        color: mode === "dark" ? "#fff" : "#000",
                         cursor: "pointer",
                         "&:hover": {
-                          backgroundColor: matteColors?.[800] || "#333",
                           transform: "translateY(-2px)",
                           boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                         },
@@ -697,7 +696,7 @@ useEffect(() => {
       {/* Best Sellers */}
       <Box
         sx={{
-          py: { xs: 4, md: 6 },
+          pt: { xs: 2, md: 6 },
           bgcolor: mode === "dark" ? "#181818" : "#fff",
         }}
       >
@@ -708,7 +707,7 @@ useEffect(() => {
               fontSize: { xs: "1.5rem", sm: "1.5rem", md: "2rem" },
               fontWeight: 700,
               textAlign: "center",
-              mb: { xs: 2, md: 3 },
+              mb: { xs: 5, md: 3 },
               position: "relative",
               "&::after": {
                 content: '""',
@@ -731,7 +730,7 @@ useEffect(() => {
               gridTemplateColumns: { md: "repeat(5, 1fr)" },
               gap: { xs: 2, md: 3 },
               overflowX: { xs: "auto", md: "visible" },
-              py: { xs: 3, md: 2 },
+          
               "&::-webkit-scrollbar": { display: "none" },
               msOverflowStyle: "none",
               scrollbarWidth: "none",
@@ -853,11 +852,10 @@ useEffect(() => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        backgroundColor: mode === "dark" ? "#fff" : "#181818",
-                        color: mode === "dark" ? "#7e7e7eff" : "#fff",
+                       backgroundColor: mode === "dark" ? "#181818" : "#fff",
+                        color: mode === "dark" ? "#fff" : "#000",
                         cursor: "pointer",
                         "&:hover": {
-                          backgroundColor: matteColors?.[800] || "#333",
                           transform: "translateY(-2px)",
                           boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                         },
@@ -889,17 +887,18 @@ useEffect(() => {
                 variant="contained"
                 size="medium"
                 sx={{
-                  backgroundColor: mode === "dark" ? "#181818" : "#fff",
-                  color: mode === "dark" ? "#fff" : "#181818",
+                 
                   py: 1,
                   px: 4,
                   fontSize: "0.9rem",
                   borderRadius: 10,
-                  "&:hover": {
-                    backgroundColor: matteColors?.[800] || "#333",
-                    transform: "translateY(-2px)",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  },
+                  backgroundColor: mode === "dark" ? "#181818" : "#fff",
+                        color: mode === "dark" ? "#fff" : "#000",
+                        cursor: "pointer",
+                        "&:hover": {
+                          transform: "translateY(-2px)",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        },
                   transition: "all 0.3s ease",
                   whiteSpace: "nowrap",
                 }}
@@ -947,7 +946,6 @@ useEffect(() => {
           key={section.key}
           ref={sectionRefs[section.key]}
           sx={{
-            py: 0,
             bgcolor: mode === "dark" ? "#181818" : "#fff",
           }}
         >
@@ -958,7 +956,7 @@ useEffect(() => {
                 fontSize: { xs: "1.5rem", sm: "1.5rem", md: "2rem" },
                 fontWeight: 700,
                 textAlign: "center",
-                mb: { xs: 2, md: 3 },
+                py: { xs: 3, md: 2 },
                 position: "relative",
                 letterSpacing: "-0.02em",
                 color: mode === "dark" ? "#fff" : "#181818",
@@ -979,29 +977,47 @@ useEffect(() => {
             </Typography>
             <Box
               sx={{
-                py: { xs: 3, md: 2 },
+              
                 position: "relative",
                 width: "100%",
                 overflow: "hidden",
-                mb: 3,
+               
               }}
             >
               {section.key === "t-shirts" ? (
                 <>
                  <div className="">
-                  <img
-  src={isMobile ? "/images/1.png" : section.image}
-  alt={section.name}
-  style={{
+                <Box
+  sx={{
+    height: {
+      xs: "120px",  // screen < md
+      md: "100%",   // screen ≥ md
+    },
     width: "100%",
-    objectFit: "inherit",
-    display: "block",
-    borderRadius: isMobile ? "8px" : "10px"
+    overflow: "hidden",
   }}
-/>
+>
+  <img
+    src={isMobile ? "/images/1.png" : section.image}
+    alt={section.name}
+    style={{
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      objectPosition: "top",
+      display: "block",
+      borderRadius: isMobile ? "8px" : "10px",
+    }}
+    onClick={() =>
+      navigate(`/products?category=${encodeURIComponent(section.key)}`)
+    }
+  />
+</Box>
+
+
 
                  </div>
-                  <Button
+                  {/* <Button
                     size={isMobile ? "small" : "large"}
                     sx={{
                       position: "absolute",
@@ -1011,7 +1027,6 @@ useEffect(() => {
                       backgroundColor: matteColors[900],
                       color: "white",
                       fontSize: { xs: "0.92rem", md: "1.15rem" },
-                      py: { xs: 0.7, md: 1.5 },
                       px: { xs: 2, md: 5 },
                       borderRadius: { xs: 4, md: 6 },
                       width: "auto",
@@ -1032,22 +1047,38 @@ useEffect(() => {
                     }
                   >
                     SHOP ALL
-                  </Button>
+                  </Button> */}
                 </>
               ) : section.key === "shirts" ? (
                 <>
   
-                   <img
-  src={isMobile ? "/images/2.png" : section.image}
-  alt={section.name}
-  style={{
+                  <Box
+  sx={{
+    height: {
+      xs: "120px",  // screen < md
+      md: "100%",   // screen ≥ md
+    },
     width: "100%",
-    objectFit: "inherit",
-    display: "block",
-    borderRadius: isMobile ? "8px" : "10px"
+    overflow: "hidden",
   }}
-/>
-                  <Button
+>
+  <img
+    src={isMobile ? "/images/2.png" : section.image}
+    alt={section.name}
+    style={{
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      objectPosition: "top",
+      display: "block",
+      borderRadius: isMobile ? "8px" : "10px",
+    }}
+    onClick={() =>
+      navigate(`/products?category=${encodeURIComponent(section.key)}`)
+    }
+  />
+</Box>
+                  {/* <Button
                     size={isMobile ? "medium" : "large"}
                     sx={{
                       position: "absolute",
@@ -1057,7 +1088,7 @@ useEffect(() => {
                       backgroundColor: matteColors[900],
                       color: "white",
                       fontSize: { xs: "0.92rem", md: "1.15rem" },
-                      py: { xs: 0.7, md: 1.5 },
+                   
                       px: { xs: 2, md: 5 },
                       borderRadius: { xs: 8, md: 10 },
                       width: "auto",
@@ -1079,21 +1110,37 @@ useEffect(() => {
                     }
                   >
                     SHOP ALL
-                  </Button>
+                  </Button> */}
                 </>
               ) : section.key === "oversized-t-shirts" ? (
                 <>
-                  <img
-  src={isMobile ? "/images/3.png" : section.image}
-  alt={section.name}
-  style={{
+                 <Box
+  sx={{
+    height: {
+      xs: "120px",  // screen < md
+      md: "100%",   // screen ≥ md
+    },
     width: "100%",
-    objectFit: "inherit",
-    display: "block",
-    borderRadius: isMobile ? "8px" : "10px"
+    overflow: "hidden",
   }}
-/>
-                  <Button
+>
+  <img
+    src={isMobile ? "/images/3.png" : section.image}
+    alt={section.name}
+    style={{
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      objectPosition: "top",
+      display: "block",
+      borderRadius: isMobile ? "8px" : "10px",
+    }}
+    onClick={() =>
+      navigate(`/products?category=${encodeURIComponent(section.key)}`)
+    }
+  />
+</Box>
+                  {/* <Button
                     size={isMobile ? "medium" : "large"}
                     sx={{
                       position: "absolute",
@@ -1103,7 +1150,7 @@ useEffect(() => {
                       backgroundColor: matteColors[900],
                       color: "white",
                       fontSize: { xs: "0.92rem", md: "1.15rem" },
-                      py: { xs: 0.7, md: 1.5 },
+                    
                       px: { xs: 2, md: 5 },
                       borderRadius: { xs: 8, md: 10 },
                       width: "auto",
@@ -1125,21 +1172,37 @@ useEffect(() => {
                     }
                   >
                     SHOP ALL
-                  </Button>
+                  </Button> */}
                 </>
               ) : section.key === "bottom-wear" ? (
                 <>
-                  <img
-  src={isMobile ? "/images/4.png" : section.image}
-  alt={section.name}
-  style={{
+                  <Box
+  sx={{
+    height: {
+      xs: "120px",  // screen < md
+      md: "100%",   // screen ≥ md
+    },
     width: "100%",
-    objectFit: "inherit",
-    display: "block",
-    borderRadius: isMobile ? "8px" : "10px"
+    overflow: "hidden",
   }}
-/>
-                  <Button
+>
+  <img
+    src={isMobile ? "/images/4.png" : section.image}
+    alt={section.name}
+    style={{
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      objectPosition: "top",
+      display: "block",
+      borderRadius: isMobile ? "8px" : "10px",
+    }}
+    onClick={() =>
+      navigate(`/products?category=${encodeURIComponent(section.key)}`)
+    }
+  />
+</Box>
+                  {/* <Button
                     size={isMobile ? "medium" : "large"}
                     sx={{
                       position: "absolute",
@@ -1149,7 +1212,7 @@ useEffect(() => {
                       backgroundColor: matteColors[900],
                       color: "white",
                       fontSize: { xs: "0.92rem", md: "1.15rem" },
-                      py: { xs: 0.7, md: 1.5 },
+                   
                       px: { xs: 2, md: 5 },
                       borderRadius: { xs: 8, md: 10 },
                       width: "auto",
@@ -1171,21 +1234,37 @@ useEffect(() => {
                     }
                   >
                     SHOP ALL
-                  </Button>
+                  </Button> */}
                 </>
               ) : section.key === "cargo-pants" ? (
                 <>
-                   <img
-  src={isMobile ? "/images/5.png" : section.image}
-  alt={section.name}
-  style={{
+                   <Box
+  sx={{
+    height: {
+      xs: "120px",  // screen < md
+      md: "100%",   // screen ≥ md
+    },
     width: "100%",
-    objectFit: "inherit",
-    display: "block",
-    borderRadius: isMobile ? "8px" : "10px"
+    overflow: "hidden",
   }}
-/>
-                  <Button
+>
+  <img
+    src={isMobile ? "/images/5.png" : section.image}
+    alt={section.name}
+    style={{
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      objectPosition: "top",
+      display: "block",
+      borderRadius: isMobile ? "8px" : "10px",
+    }}
+    onClick={() =>
+      navigate(`/products?category=${encodeURIComponent(section.key)}`)
+    }
+  />
+</Box>
+                  {/* <Button
                     size={isMobile ? "medium" : "large"}
                     sx={{
                       position: "absolute",
@@ -1195,7 +1274,7 @@ useEffect(() => {
                       backgroundColor: matteColors[900],
                       color: "white",
                       fontSize: { xs: "0.92rem", md: "1.15rem" },
-                      py: { xs: 0.7, md: 1.5 },
+                    
                       px: { xs: 2, md: 5 },
                       borderRadius: { xs: 8, md: 10 },
                       width: "auto",
@@ -1217,21 +1296,37 @@ useEffect(() => {
                     }
                   >
                     SHOP ALL
-                  </Button>
+                  </Button> */}
                 </>
               ) : section.key === "jackets" ? (
                 <>
-                   <img
-  src={isMobile ? "/images/6.png" : section.image}
-  alt={section.name}
-  style={{
+                 <Box
+  sx={{
+    height: {
+      xs: "120px",  // screen < md
+      md: "100%",   // screen ≥ md
+    },
     width: "100%",
-    objectFit: "inherit",
-    display: "block",
-    borderRadius: isMobile ? "8px" : "10px"
+    overflow: "hidden",
   }}
-/>
-                  <Button
+>
+  <img
+    src={isMobile ? "/images/6.png" : section.image}
+    alt={section.name}
+    style={{
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      objectPosition: "top",
+      display: "block",
+      borderRadius: isMobile ? "8px" : "10px",
+    }}
+    onClick={() =>
+      navigate(`/products?category=${encodeURIComponent(section.key)}`)
+    }
+  />
+</Box>
+                  {/* <Button
                     size={isMobile ? "medium" : "large"}
                     sx={{
                       position: "absolute",
@@ -1241,7 +1336,7 @@ useEffect(() => {
                       backgroundColor: matteColors[900],
                       color: "white",
                       fontSize: { xs: "0.92rem", md: "1.15rem" },
-                      py: { xs: 0.7, md: 1.5 },
+                      
                       px: { xs: 2, md: 5 },
                       borderRadius: { xs: 8, md: 10 },
                       width: "auto",
@@ -1263,21 +1358,37 @@ useEffect(() => {
                     }
                   >
                     SHOP ALL
-                  </Button>
+                  </Button> */}
                 </>
               ) : section.key === "hoodies" ? (
                 <>
-                  <img
-  src={isMobile ? "/images/7.png" : section.image}
-  alt={section.name}
-  style={{
+                 <Box
+  sx={{
+    height: {
+      xs: "120px",  // screen < md
+      md: "100%",   // screen ≥ md
+    },
     width: "100%",
-    objectFit: "inherit",
-    display: "block",
-    borderRadius: isMobile ? "8px" : "10px"
+    overflow: "hidden",
   }}
-/>
-                  <Button
+>
+  <img
+    src={isMobile ? "/images/7.png" : section.image}
+    alt={section.name}
+    style={{
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      objectPosition: "top",
+      display: "block",
+      borderRadius: isMobile ? "8px" : "10px",
+    }}
+    onClick={() =>
+      navigate(`/products?category=${encodeURIComponent(section.key)}`)
+    }
+  />
+</Box>
+                  {/* <Button
                     size={isMobile ? "medium" : "large"}
                     sx={{
                       position: "absolute",
@@ -1287,7 +1398,7 @@ useEffect(() => {
                       backgroundColor: matteColors[900],
                       color: "white",
                       fontSize: { xs: "0.92rem", md: "1.15rem" },
-                      py: { xs: 0.7, md: 1.5 },
+                    
                       px: { xs: 2, md: 5 },
                       borderRadius: { xs: 8, md: 10 },
                       width: "auto",
@@ -1309,21 +1420,37 @@ useEffect(() => {
                     }
                   >
                     SHOP ALL
-                  </Button>
+                  </Button> */}
                 </>
               ) : section.key === "co-ord-sets" ? (
                 <>
-                  <img
-  src={isMobile ? "/images/8.png" : section.image}
-  alt={section.name}
-  style={{
+                 <Box
+  sx={{
+    height: {
+      xs: "120px",  // screen < md
+      md: "100%",   // screen ≥ md
+    },
     width: "100%",
-    objectFit: "inherit",
-    display: "block",
-    borderRadius: isMobile ? "8px" : "10px"
+    overflow: "hidden",
   }}
-/>
-                  <Button
+>
+  <img
+    src={isMobile ? "/images/8.png" : section.image}
+    alt={section.name}
+    style={{
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      objectPosition: "top",
+      display: "block",
+      borderRadius: isMobile ? "8px" : "10px",
+    }}
+    onClick={() =>
+      navigate(`/products?category=${encodeURIComponent(section.key)}`)
+    }
+  />
+</Box>
+                  {/* <Button
                     size={isMobile ? "medium" : "large"}
                     sx={{
                       position: "absolute",
@@ -1333,7 +1460,7 @@ useEffect(() => {
                       backgroundColor: matteColors[900],
                       color: "white",
                       fontSize: { xs: "0.92rem", md: "1.15rem" },
-                      py: { xs: 0.7, md: 1.5 },
+                      
                       px: { xs: 2, md: 5 },
                       borderRadius: { xs: 8, md: 10 },
                       width: "auto",
@@ -1355,7 +1482,7 @@ useEffect(() => {
                     }
                   >
                     SHOP ALL
-                  </Button>
+                  </Button> */}
                 </>
               ) : (
                 <img
@@ -1377,7 +1504,7 @@ useEffect(() => {
                 gridTemplateColumns: { md: "repeat(5, 1fr)" },
                 gap: { xs: 0.5, md: 3 },
                 overflowX: { xs: "auto", md: "visible" },
-                py: { xs: 0, md: 2 },
+              
                 "&::-webkit-scrollbar": { display: "none" },
                 msOverflowStyle: "none",
                 scrollbarWidth: "none",
@@ -1443,8 +1570,6 @@ useEffect(() => {
                         flex: { xs: "0 0 50%", md: "unset" },
                         minWidth: { xs: "50%", md: "unset" },
                         maxWidth: { xs: "50%", md: "unset" },
-
-                        pb:8,
                         display: "flex",
                       }}
                     >
@@ -1560,11 +1685,10 @@ useEffect(() => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        backgroundColor: mode === "dark" ? "#fff" : "#181818",
-                        color: mode === "dark" ? "#7e7e7eff" : "#fff",
+                       backgroundColor: mode === "dark" ? "#181818" : "#fff",
+                        color: mode === "dark" ? "#fff" : "#000",
                         cursor: "pointer",
                         "&:hover": {
-                          backgroundColor: matteColors?.[800] || "#333",
                           transform: "translateY(-2px)",
                           boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                         },
@@ -1593,7 +1717,7 @@ useEffect(() => {
       {/* Features Section */}
       <Box
         sx={{
-          py: { xs: 3, md: 2 },
+          pt: { xs: 3, md: 2 },
           mt: { xs: 3, md: 2 },
           bgcolor: mode === "dark" ? "#181818" : "#fff",
         }}
@@ -1647,7 +1771,7 @@ useEffect(() => {
       {!profileLoading && !isSubscribed && (
         <Box
           sx={{
-            py: { xs: 2, md: 3 },
+            pt: { xs: 2, md: 3 },
             pb: { xs: 2, md: 2 },
             mb: 0,
             bgcolor: mode === "dark" ? "#181818" : "#f7f7f7",
@@ -1732,7 +1856,7 @@ useEffect(() => {
                           background:
                             "linear-gradient(90deg, #FFD700 0%, #C9A14A 100%)",
                           color: "black",
-                          py: isMobile ? 1.2 : 1,
+                          pt: isMobile ? 1.2 : 1,
                           px: isMobile ? 3 : 4,
                           fontSize: { xs: "0.7rem", md: "0.9rem" },
                           borderRadius: 10,

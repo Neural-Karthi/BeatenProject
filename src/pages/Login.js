@@ -11,14 +11,11 @@ import {
   Paper,
   Alert,
   CircularProgress,
-  Tabs,
-  Tab,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   IconButton,
-  Grid,
   ButtonGroup,
 } from "@mui/material";
 import EmailIcon from "@mui/icons-material/Email";
@@ -38,7 +35,7 @@ import {
   verifyOtpLogin,
 } from "../api/forgotPasswordAPI";
 
-const Login = () => {
+const Login = ({mode}) => {
   const { login, error, loading, setUser } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [localError, setLocalError] = useState("");
@@ -324,6 +321,9 @@ const Login = () => {
     setOtpVerifyLoading(false);
   };
 
+
+ const activeBorderColor = mode === "dark" ? "#ffffff" : "#979797ff";
+
   return (
     <Container maxWidth="sm">
       <ToastContainer
@@ -336,53 +336,57 @@ const Login = () => {
         draggable
         pauseOnHover
       />
-      <Box sx={{ py:5,background:'white' }}>
-        <Typography variant="h5" align="center" sx={{ mb: 3, fontWeight: 700 }}>
+      <Box sx={{ py:5,bgcolor: mode === "dark" ? "#" : "#fff", }}>
+        <Typography variant="h5" align="center" sx={{ color: mode === "dark" ? "#ffffff" : "#000000", mb: 3, fontWeight: 700 }}>
           Welcome Back
         </Typography>
-        <Typography align="center" color="text.secondary" sx={{ mb: 3 }}>
+        <Typography align="center" color="text.secondary" sx={{ color: mode === "dark" ? "#ffffff" : "#000000",mb: 3 }}>
           Enter your email or phone to continue
         </Typography>
         <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
           <ButtonGroup variant="text" sx={{ boxShadow: "none" }}>
-            <Button
-              onClick={() => handleSwitchLoginMode("email")}
-              sx={{
-                fontWeight: 600,
-                fontSize: 16,
-                borderBottom:
-                  loginMode === "email"
-                    ? "3px solid #1a1a1a"
-                    : "3px solid transparent",
-                borderRadius: 0,
-                color: loginMode === "email" ? "#1a1a1a" : "#888",
-                background: "none",
-                boxShadow: "none",
-                px: 4,
-              }}
-              disableRipple
-            >
-              Email Login
-            </Button>
-            <Button
-              onClick={() => handleSwitchLoginMode("otp")}
-              sx={{
-                fontWeight: 600,
-                fontSize: 16,
-                borderBottom:
-                  loginMode === "otp"
-                    ? "3px solid #1a1a1a"
-                    : "3px solid transparent",
-                borderRadius: 0,
-                color: loginMode === "otp" ? "#1a1a1a" : "#888",
-                background: "none",
-                boxShadow: "none",
-                px: 4,
-              }}
-              disableRipple
-            >
-              OTP Login
-            </Button>
+    <Button
+  onClick={() => handleSwitchLoginMode("email")}
+  sx={{
+    fontWeight: 600,
+    fontSize: 16,
+    color: mode === "dark" ? "#ffffff" : "#000000",
+    borderBottom:
+      loginMode === "email"
+        ? `3px solid ${mode === "dark" ? "#ffffff" : "#000000"}`
+        : "3px solid transparent",
+    borderRadius: 0,
+    backgroundColor: "transparent",
+    boxShadow: "none",
+    px: 4,
+    transition: "border-bottom 0.3s ease",
+  }}
+  disableRipple
+>
+  Email Login
+</Button>
+
+<Button
+  onClick={() => handleSwitchLoginMode("otp")}
+  sx={{
+    fontWeight: 600,
+    fontSize: 16,
+    color: mode === "dark" ? "#ffffff" : "#000000",
+    borderBottom:
+      loginMode === "otp"
+        ? `3px solid ${mode === "dark" ? "#ffffff" : "#000000"}`
+        : "3px solid transparent",
+    borderRadius: 0,
+    backgroundColor: "transparent",
+    boxShadow: "none",
+    px: 4,
+    transition: "border-bottom 0.3s ease",
+  }}
+  disableRipple
+>
+  OTP Login
+</Button>
+
           </ButtonGroup>
         </Box>
         {loginMode === "email" && (
@@ -439,7 +443,7 @@ const Login = () => {
               >
                 {loading ? <CircularProgress size={24} /> : "Login"}
               </Button>
-              <Box sx={{ textAlign: "right", mb: 2 }}>
+              <Box sx={{ textAlign: "right", my: 2 }}>
                 <Link
                   component="button"
                   variant="body2"

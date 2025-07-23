@@ -5,7 +5,7 @@ import { fetchNewsContent } from "../../api/newsContentAPI";
 
 const DATA_ENTRY_ID = "68764ef87d492357106bb01d"; // TODO: Replace with actual ID or prop
 
-const NewsScroller = () => {
+const NewsScroller = (props) => {
   const [newsContent, setNewsContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,10 +29,10 @@ const NewsScroller = () => {
   return (
     <Box
       sx={{
-        background: "#E8E8E8",
+        bgcolor: props.mode === "dark" ? "#181818" : "#fff",
         color: "#fff",
         p: 4,
-        color: "black",
+        color: props.mode === "dark" ? "#fff" : "#181818",
         py: 0.8,
         overflow: "hidden",
         whiteSpace: "nowrap",

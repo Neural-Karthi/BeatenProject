@@ -225,6 +225,7 @@ const ProductDetail = ({ mode }) => {
   return (
     <Box
       sx={{
+          pt:{md:2},
         bgcolor: mode === "dark" ? "#181818" : "#fff",
         color: mode === "dark" ? "#fff" : "inherit",
         minHeight: "100vh",
@@ -325,6 +326,7 @@ const ProductDetail = ({ mode }) => {
               {/* Thumbnails - vertical column, outside main image box */}
               <Box
                 sx={{
+                    px:{xs:2},
                   display: { xs: "flex", md: "flex" },
                   flexDirection: { xs: "row", md: "column" },
                   gap: 1,
@@ -377,6 +379,7 @@ const ProductDetail = ({ mode }) => {
           <Grid item xs={12} md={5}>
             <Box
               sx={{
+                   px:{xs:2},
                 position: "sticky",
                 top: 100,
                 color: mode === "dark" ? "#fff" : "inherit",
