@@ -161,7 +161,7 @@ const Contact = ({ mode }) => {
         <Box
           sx={{
             textAlign: "center",
-            mt: { xs: 4, md: 10 },
+            pt: { xs: 4, md: 10 },
             mb: { xs: 4, md: 10 },
             position: "relative",
           }}
@@ -411,154 +411,187 @@ const Contact = ({ mode }) => {
                 }}
               >
                 <form onSubmit={handleSubmit}>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        label="Your Name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        required
-                        size={isMobile ? "medium" : "small"}
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            fontSize: { xs: "1.05rem", md: "1rem" },
-                            "&:hover fieldset": {
-                              borderColor: mode === "dark" ? "#ffffff" : matteColors[900],
-                            },
-                          },
-                          "& .MuiInputLabel-root": {
-                            color: mode === "dark" ? "#cccccc" : "inherit",
-                          },
-                          "& .MuiOutlinedInput-input": {
-                            color: mode === "dark" ? "#ffffff" : "inherit",
-                          },
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        label="Your Email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                        size={isMobile ? "medium" : "small"}
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            fontSize: { xs: "1.05rem", md: "1rem" },
-                            "&:hover fieldset": {
-                              borderColor: mode === "dark" ? "#ffffff" : matteColors[900],
-                            },
-                          },
-                          "& .MuiInputLabel-root": {
-                            color: mode === "dark" ? "#cccccc" : "inherit",
-                          },
-                          "& .MuiOutlinedInput-input": {
-                            color: mode === "dark" ? "#ffffff" : "inherit",
-                          },
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Subject"
-                        name="subject"
-                        value={formData.subject}
-                        onChange={handleInputChange}
-                        required
-                        size={isMobile ? "medium" : "small"}
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            fontSize: { xs: "1.05rem", md: "1rem" },
-                            "&:hover fieldset": {
-                              borderColor: mode === "dark" ? "#ffffff" : matteColors[900],
-                            },
-                          },
-                          "& .MuiInputLabel-root": {
-                            color: mode === "dark" ? "#cccccc" : "inherit",
-                          },
-                          "& .MuiOutlinedInput-input": {
-                            color: mode === "dark" ? "#ffffff" : "inherit",
-                          },
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Message"
-                        name="message"
-                        multiline
-                        rows={isMobile ? 5 : 4}
-                        value={formData.message}
-                        onChange={handleInputChange}
-                        required
-                        size={isMobile ? "medium" : "small"}
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            fontSize: { xs: "1.05rem", md: "1rem" },
-                            "&:hover fieldset": {
-                              borderColor: mode === "dark" ? "#ffffff" : matteColors[900],
-                            },
-                          },
-                          "& .MuiInputLabel-root": {
-                            color: mode === "dark" ? "#cccccc" : "inherit",
-                          },
-                          "& .MuiOutlinedInput-input": {
-                            color: mode === "dark" ? "#ffffff" : "inherit",
-                          },
-                        }}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "center",
-                          width: "100%",
-                        }}
-                      >
-                        <Button
-                          type="submit"
-                          variant="contained"
-                          size={isMobile ? "large" : "medium"}
-                         
-                          disabled={isSubmitting}
-                          sx={{
-                            backgroundColor: matteColors[900],
-                            color: "white",
-                            py: isMobile ? 1.2 : 1,
-                            px: isMobile ? 3 : 4,
-                            fontSize: { xs: "1.04rem", md: "0.9rem" },
-                            borderRadius: 10,
-                            width: "auto",
-                            minWidth: 0,
-                            "&:hover": {
-                              backgroundColor: matteColors[800],
-                              transform: "translateY(-2px)",
-                              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                            },
-                            "&:disabled": {
-                              backgroundColor: matteColors[600],
-                              transform: "none",
-                              boxShadow: "none",
-                            },
-                            transition: "all 0.3s ease",
-                            alignSelf: "center",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {isSubmitting ? "SENDING..." : "SEND"}
-                        </Button>
-                      </Box>
-                    </Grid>
-                  </Grid>
-                </form>
+  <Grid container spacing={2}>
+    {/* Your Name */}
+    <Grid item xs={12} sm={6}>
+      <TextField
+        fullWidth
+        label="Your Name"
+        name="name"
+        value={formData.name}
+        onChange={handleInputChange}
+        required
+        size={isMobile ? "medium" : "small"}
+        sx={{
+          "& .MuiOutlinedInput-root": {
+            fontSize: { xs: "1.05rem", md: "1rem" },
+            "& fieldset": {
+              borderColor: mode === "dark" ? "#888" : matteColors[300],
+            },
+            "&:hover fieldset": {
+              borderColor: mode === "dark" ? "#fff" : matteColors[900],
+            },
+            "&.Mui-focused fieldset": {
+              borderColor: mode === "dark" ? "#ffffff" : matteColors[800],
+              borderWidth: "2px",
+            },
+          },
+          "& .MuiInputLabel-root": {
+            color: mode === "dark" ? "#cccccc" : "inherit",
+          },
+          "& .MuiOutlinedInput-input": {
+            color: mode === "dark" ? "#ffffff" : "#181818",
+          },
+        }}
+      />
+    </Grid>
+
+    {/* Your Email */}
+    <Grid item xs={12} sm={6}>
+      <TextField
+        fullWidth
+        label="Your Email"
+        name="email"
+        type="email"
+        value={formData.email}
+        onChange={handleInputChange}
+        required
+        size={isMobile ? "medium" : "small"}
+        sx={{
+          "& .MuiOutlinedInput-root": {
+            fontSize: { xs: "1.05rem", md: "1rem" },
+            "& fieldset": {
+              borderColor: mode === "dark" ? "#888" : matteColors[300],
+            },
+            "&:hover fieldset": {
+              borderColor: mode === "dark" ? "#fff" : matteColors[900],
+            },
+            "&.Mui-focused fieldset": {
+              borderColor: mode === "dark" ? "#ffffff" : matteColors[800],
+              borderWidth: "2px",
+            },
+          },
+          "& .MuiInputLabel-root": {
+            color: mode === "dark" ? "#cccccc" : "inherit",
+          },
+          "& .MuiOutlinedInput-input": {
+            color: mode === "dark" ? "#ffffff" : "#181818",
+          },
+        }}
+      />
+    </Grid>
+
+    {/* Subject */}
+    <Grid item xs={12}>
+      <TextField
+        fullWidth
+        label="Subject"
+        name="subject"
+        value={formData.subject}
+        onChange={handleInputChange}
+        required
+        size={isMobile ? "medium" : "small"}
+        sx={{
+          "& .MuiOutlinedInput-root": {
+            fontSize: { xs: "1.05rem", md: "1rem" },
+            "& fieldset": {
+              borderColor: mode === "dark" ? "#888" : matteColors[300],
+            },
+            "&:hover fieldset": {
+              borderColor: mode === "dark" ? "#fff" : matteColors[900],
+            },
+            "&.Mui-focused fieldset": {
+              borderColor: mode === "dark" ? "#ffffff" : matteColors[800],
+              borderWidth: "2px",
+            },
+          },
+          "& .MuiInputLabel-root": {
+            color: mode === "dark" ? "#cccccc" : "inherit",
+          },
+          "& .MuiOutlinedInput-input": {
+            color: mode === "dark" ? "#ffffff" : "#181818",
+          },
+        }}
+      />
+    </Grid>
+
+    {/* Message */}
+    <Grid item xs={12}>
+      <TextField
+        fullWidth
+        label="Message"
+        name="message"
+        multiline
+        rows={isMobile ? 5 : 4}
+        value={formData.message}
+        onChange={handleInputChange}
+        required
+        size={isMobile ? "medium" : "small"}
+        sx={{
+          "& .MuiOutlinedInput-root": {
+            fontSize: { xs: "1.05rem", md: "1rem" },
+            "& fieldset": {
+              borderColor: mode === "dark" ? "#888" : matteColors[300],
+            },
+            "&:hover fieldset": {
+              borderColor: mode === "dark" ? "#fff" : matteColors[900],
+            },
+            "&.Mui-focused fieldset": {
+              borderColor: mode === "dark" ? "#ffffff" : matteColors[800],
+              borderWidth: "2px",
+            },
+          },
+          "& .MuiInputLabel-root": {
+            color: mode === "dark" ? "#cccccc" : "inherit",
+          },
+          "& .MuiOutlinedInput-input": {
+            color: mode === "dark" ? "#ffffff" : "#181818",
+          },
+        }}
+      />
+    </Grid>
+
+    {/* Submit Button */}
+    <Grid item xs={12}>
+      <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
+        <Button
+  type="submit"
+  variant="contained"
+  size={isMobile ? "large" : "medium"}
+  disabled={isSubmitting}
+  sx={{
+    backgroundColor: mode === "dark" ? "#fff" : "#000",
+    color: mode === "dark" ? "#000" : "#fff",
+    py: isMobile ? 1.2 : 1,
+    px: isMobile ? 3 : 4,
+    fontSize: { xs: "1.04rem", md: "0.9rem" },
+    borderRadius: 10,
+    width: "auto",
+    minWidth: 0,
+    "&:hover": {
+      backgroundColor: mode === "dark" ? "#111" : "#f0f0f0",
+      transform: "translateY(-2px)",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    },
+    "&:disabled": {
+      backgroundColor: mode === "dark" ? "#333" : "#ddd",
+      color: "#aaa",
+      transform: "none",
+      boxShadow: "none",
+    },
+    transition: "all 0.3s ease",
+    alignSelf: "center",
+    whiteSpace: "nowrap",
+  }}
+>
+  {isSubmitting ? "SENDING..." : "SEND"}
+</Button>
+
+      </Box>
+    </Grid>
+  </Grid>
+</form>
+
               </Paper>
             </Grid>
           </Grid>

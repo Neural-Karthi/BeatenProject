@@ -65,15 +65,32 @@ const ForgotPassword = ({ mode }) => {
           justifyContent: "center",
         }}
       >
-        <Paper sx={{ p: 4, width: "100%" }}>
-          <Typography variant="h4" component="h1" align="center" gutterBottom>
+        <Paper
+          sx={{
+            p: 4,
+            width: "100%",
+            bgcolor: mode === "dark" ? "#232323" : "#fafafa",
+            color: mode === "dark" ? "#fff" : "#000",
+          }}
+          elevation={3}
+        >
+          <Typography
+            variant="h4"
+            component="h1"
+            align="center"
+            gutterBottom
+            sx={{ color: mode === "dark" ? "#fff" : "#000" }}
+          >
             Forgot Password
           </Typography>
+
           <Typography
             variant="body1"
             align="center"
-            color="text.secondary"
-            sx={{ mb: 4 }}
+            sx={{
+              mb: 4,
+              color: mode === "dark" ? "#ccc" : "#555",
+            }}
           >
             Enter your email address and we'll send you a link to reset your
             password
@@ -102,23 +119,56 @@ const ForgotPassword = ({ mode }) => {
               error={formik.touched.email && Boolean(formik.errors.email)}
               helperText={formik.touched.email && formik.errors.email}
               margin="normal"
+              InputLabelProps={{
+                style: { color: mode === "dark" ? "#aaa" : "#555" },
+              }}
+              InputProps={{
+                style: {
+                  color: mode === "dark" ? "#fff" : "#000",
+                  backgroundColor: mode === "dark" ? "#2e2e2e" : "#fff",
+                },
+              }}
             />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              size="large"
-              disabled={loading}
-              sx={{ mt: 3, mb: 2 }}
-            >
-              {loading ? <CircularProgress size={24} /> : "Send Reset Link"}
-            </Button>
+
+           <Button
+  type="submit"
+  fullWidth
+  variant="contained"
+  size="large"
+  disabled={loading}
+  sx={{
+    mt: 3,
+    mb: 2,
+    bgcolor: mode === "dark" ? "#1e88e5" : "#1976d2",
+    color: "#fff",
+    "&:hover": {
+      bgcolor: mode === "dark" ? "#1565c0" : "#115293",
+    },
+  }}
+>
+  {loading ? (
+    "Loading.."
+  ) : (
+    "Send Reset Link"
+  )}
+</Button>
+
           </form>
 
           <Box sx={{ textAlign: "center", mt: 2 }}>
-            <Typography variant="body2" color="text.secondary">
+            <Typography
+              variant="body2"
+              sx={{ color: mode === "dark" ? "#ccc" : "#555" }}
+            >
               Remember your password?{" "}
-              <Link component={RouterLink} to="/login">
+              <Link
+                component={RouterLink}
+                to="/login"
+                underline="hover"
+                sx={{
+                  color: mode === "dark" ? "#90caf9" : "#1976d2",
+                }}
+              >
                 Login here
               </Link>
             </Typography>

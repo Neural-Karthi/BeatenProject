@@ -793,7 +793,7 @@ const Login = ({mode}) => {
             }}
           >
             {forgotPasswordLoading ? (
-              <CircularProgress size={20} color="inherit" />
+             <CircularProgress size={24} sx={{ color: '#fff' }} />
             ) : forgotPasswordStep === 1 ? (
               "Send OTP"
             ) : forgotPasswordStep === 2 ? (

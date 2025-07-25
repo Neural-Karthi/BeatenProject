@@ -435,104 +435,110 @@ const ProductDetail = ({ mode }) => {
 
               {/* Color Selector */}
               <Box sx={{ mb: 3 }}>
-                <Typography sx={{ fontWeight: 500, mb: 1 }}>
-                  Color: {selectedColor}
-                </Typography>
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  {product.colors.map((color) => (
-                    <Chip
-                      key={color}
-                      label={color}
-                      onClick={() => setSelectedColor(color)}
-                      variant={selectedColor === color ? "filled" : "outlined"}
-                      sx={{
-                        cursor: "pointer",
-                        borderColor: mode === "dark" ? "#fff" : "#181818",
-                        backgroundColor:
-                          selectedColor === color
-                            ? mode === "dark"
-                              ? "#fff"
-                              : "#181818"
-                            : "transparent",
-                        color:
-                          selectedColor === color
-                            ? mode === "dark"
-                              ? "#181818"
-                              : "#fff"
-                            : mode === "dark"
-                            ? "#fff"
-                            : "#181818",
-                        "&:hover": {
-                          backgroundColor:
-                            selectedColor === color
-                              ? mode === "dark"
-                                ? "#181818"
-                                : "#fff"
-                              : mode === "dark"
-                              ? "#222"
-                              : "#f5f5f5",
-                          color:
-                            selectedColor === color
-                              ? mode === "dark"
-                                ? "#fff"
-                                : "#181818"
-                              : undefined,
-                        },
-                      }}
-                    />
-                  ))}
-                </Box>
-              </Box>
+  <Typography sx={{ fontWeight: 500, mb: 1 }}>
+    Color: {selectedColor}
+  </Typography>
+  <Box sx={{ display: "flex", gap: 1 }}>
+    {product.colors.map((color) => {
+      const isSelected = selectedColor === color;
+      const isDark = mode === "dark";
+
+      return (
+        <Chip
+          key={color}
+          label={color}
+          onClick={() => setSelectedColor(color)}
+          variant={isSelected ? "filled" : "outlined"}
+          sx={{
+            cursor: "pointer",
+            borderColor: isDark ? "#fff" : "#181818",
+            backgroundColor: isSelected
+              ? isDark
+                ? "#fff"
+                : "#181818"
+              : "transparent",
+            color: isSelected
+              ? isDark
+                ? "#181818"
+                : "#fff"
+              : isDark
+              ? "#fff"
+              : "#181818",
+            "&:hover": {
+              backgroundColor: isSelected
+                ? isDark
+                  ? "#fff"
+                  : "#181818"
+                : isDark
+                ? "#222"
+                : "#f5f5f5",
+              color: isSelected
+                ? isDark
+                  ? "#181818"
+                  : "#fff"
+                : isDark
+                ? "#fff"
+                : "#181818",
+            },
+          }}
+        />
+      );
+    })}
+  </Box>
+</Box>
 
               {/* Size Selector */}
-              <Box sx={{ mb: 3 }}>
-                <Typography sx={{ fontWeight: 500, mb: 1 }}>Size</Typography>
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                  {product.sizes.map((size) => (
-                    <Chip
-                      key={size}
-                      label={size}
-                      onClick={() => setSelectedSize(size)}
-                      variant={selectedSize === size ? "filled" : "outlined"}
-                      sx={{
-                        cursor: "pointer",
-                        minWidth: "48px",
-                        borderColor: mode === "dark" ? "#fff" : "#181818",
-                        backgroundColor:
-                          selectedSize === size
-                            ? mode === "dark"
-                              ? "#fff"
-                              : "#181818"
-                            : "transparent",
-                        color:
-                          selectedSize === size
-                            ? mode === "dark"
-                              ? "#181818"
-                              : "#fff"
-                            : mode === "dark"
-                            ? "#fff"
-                            : "#181818",
-                        "&:hover": {
-                          backgroundColor:
-                            selectedSize === size
-                              ? mode === "dark"
-                                ? "#181818"
-                                : "#fff"
-                              : mode === "dark"
-                              ? "#222"
-                              : "#f5f5f5",
-                          color:
-                            selectedSize === size
-                              ? mode === "dark"
-                                ? "#fff"
-                                : "#181818"
-                              : undefined,
-                        },
-                      }}
-                    />
-                  ))}
-                </Box>
-              </Box>
+            <Box sx={{ mb: 3 }}>
+  <Typography sx={{ fontWeight: 500, mb: 1 }}>Size</Typography>
+  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+    {product.sizes.map((size) => {
+      const isSelected = selectedSize === size;
+      const isDark = mode === "dark";
+
+      return (
+        <Chip
+          key={size}
+          label={size}
+          onClick={() => setSelectedSize(size)}
+          variant={isSelected ? "filled" : "outlined"}
+          sx={{
+            cursor: "pointer",
+            minWidth: "48px",
+            borderColor: isDark ? "#fff" : "#181818",
+            backgroundColor: isSelected
+              ? isDark
+                ? "#fff"
+                : "#181818"
+              : "transparent",
+            color: isSelected
+              ? isDark
+                ? "#181818"
+                : "#fff"
+              : isDark
+              ? "#fff"
+              : "#181818",
+            "&:hover": {
+              backgroundColor: isSelected
+                ? isDark
+                  ? "#fff"
+                  : "#181818"
+                : isDark
+                ? "#222"
+                : "#f5f5f5",
+              color: isSelected
+                ? isDark
+                  ? "#181818"
+                  : "#fff"
+                : isDark
+                ? "#fff"
+                : "#181818",
+            },
+          }}
+        />
+      );
+    })}
+  </Box>
+</Box>
 
               {/* Quantity & Add to Cart */}
               <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
@@ -542,7 +548,7 @@ const ProductDetail = ({ mode }) => {
                       display: "flex",
                       alignItems: "center",
                       border: `1px solid ${
-                        mode === "dark" ? "#fff" : "#181818"
+                        mode === "dark" ? "#fff" : "#696969ff"
                       }`,
                       borderRadius: 2,
                       justifyContent: "space-between",
