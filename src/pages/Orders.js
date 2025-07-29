@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Container,
@@ -21,6 +21,7 @@ import {
   TextField,
   Snackbar,
   Alert,
+  CircularProgress, // Added for loading spinner
 } from "@mui/material";
 import {
   LocalShipping as ShippingIcon,
@@ -28,49 +29,18 @@ import {
   Cancel as CancelledIcon,
   RemoveRedEye as ViewIcon,
   ShoppingCart as ShoppingCartIcon,
-  Download as DownloadIcon,
   Autorenew as ExchangeIcon,
-  ReceiptLong as InvoiceIcon,
+  Close as CloseIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
-  Close as CloseIcon,
 } from "@mui/icons-material";
 import { useTheme, useMediaQuery } from "@mui/material";
-import { useEffect } from "react";
 import axios from "axios";
 import PendingTimeIcon from "@mui/icons-material/AccessTime";
 import ProcessingInventoryIcon from "@mui/icons-material/Inventory";
 import MuiAlert from "@mui/material/Alert";
 import { API_ENDPOINTS, buildApiUrl, handleApiError } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
-
-const getStatusColor = (status) => {
-  switch (status) {
-    case "delivered":
-      return "success";
-    case "shipped":
-      return "info";
-    case "processing":
-      return "warning";
-    case "cancelled":
-      return "error";
-    default:
-      return "default";
-  }
-};
-
-const getStatusIcon = (status) => {
-  switch (status) {
-    case "shipped":
-      return <ShippingIcon />;
-    case "delivered":
-      return <DeliveredIcon />;
-    case "cancelled":
-      return <CancelledIcon />;
-    default:
-      return null;
-  }
-};
 
 const PLACEHOLDER_IMAGE = "https://via.placeholder.com/80x80?text=Product";
 
@@ -91,17 +61,14 @@ const matteColors = {
   100: "#f5f5f5",
 };
 
-// Add statusStyles map
+// Updated statusStyles to include all relevant statuses
 const statusStyles = {
-  pending: { bg: "#ff9800", color: "#fff", icon: <PendingTimeIcon /> }, // orange
-  confirmed: {
-    bg: "#1976d2",
-    color: "#fff",
-    icon: <ProcessingInventoryIcon />,
-  }, // blue
-  shipped: { bg: "#181818", color: "#fff", icon: <ShippingIcon /> }, // black
-  delivered: { bg: "#388e3c", color: "#fff", icon: <DeliveredIcon /> }, // green
-  cancelled: { bg: "#d32f2f", color: "#fff", icon: <CancelledIcon /> }, // red
+  pending: { bg: "#ff9800", color: "#fff", icon: <PendingTimeIcon /> }, // Orange
+  processing: { bg: "#0288d1", color: "#fff", icon: <ProcessingInventoryIcon /> }, // Blue
+  shipped: { bg: "#181818", color: "#fff", icon: <ShippingIcon /> }, // Black
+  "out for delivery": { bg: "#7b1fa2", color: "#fff", icon: <ShippingIcon /> }, // Purple
+  delivered: { bg: "#388e3c", color: "#fff", icon: <DeliveredIcon /> }, // Green
+  cancelled: { bg: "#d32f2f", color: "#fff", icon: <CancelledIcon /> }, // Red
 };
 
 const getImageUrl = (img) => {
@@ -109,6 +76,54 @@ const getImageUrl = (img) => {
   if (img.startsWith("http")) return img;
   if (img.startsWith("photo-")) return `https://images.unsplash.com/${img}`;
   return `/images/${img}`;
+};
+
+// Normalize and validate order status
+const normalizeStatus = (status) => {
+  if (!status) {
+    console.warn("Order status is undefined or null, defaulting to 'pending'");
+    return "pending";
+  }
+  const normalized = status.toLowerCase().replace(/[\s_]+/g, " ").trim();
+  const validStatuses = [
+    "pending",
+    "processing",
+    "shipped",
+    "out for delivery",
+    "delivered",
+    "cancelled",
+  ];
+  // Map "confirmed" to "processing" for backward compatibility
+  if (normalized === "confirmed") return "processing";
+  if (!validStatuses.includes(normalized)) {
+    console.warn(`Invalid order status "${status}", defaulting to 'pending'`);
+    return "pending";
+  }
+  return normalized;
+};
+
+// Get display status for UI
+const getDisplayStatus = (status) => {
+  const normalized = normalizeStatus(status);
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+};
+
+// Get stepper index for status
+const getStepperIndex = (status) => {
+  const normalized = normalizeStatus(status);
+  switch (normalized) {
+    case "delivered":
+      return 4;
+    case "out for delivery":
+      return 3;
+    case "shipped":
+      return 2;
+    case "processing":
+      return 1;
+    case "pending":
+    default:
+      return 0;
+  }
 };
 
 const Orders = ({ mode }) => {
@@ -167,9 +182,7 @@ const Orders = ({ mode }) => {
           headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get(
-          `${
-            process.env.REACT_APP_API_URL || "http://localhost:8000/api"
-          }/user/returns`,
+          `${process.env.REACT_APP_API_URL || "http://localhost:8000/api"}/user/returns`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -177,15 +190,16 @@ const Orders = ({ mode }) => {
       ]);
       const ordersData = ordersRes.data.data || [];
       const returnsData = returnsRes.data.data || [];
-      // Attach returnStatus to each order item if a matching return exists
+      // Create a Map for faster return lookup
+      const returnsMap = new Map(
+        returnsData.map((r) => [`${r.orderId}-${r.productId}`, r.status])
+      );
+      // Attach returnStatus to each order item
       ordersData.forEach((order) => {
         order.orderItems.forEach((item) => {
-          const foundReturn = returnsData.find(
-            (r) =>
-              r.orderId === order._id &&
-              (r.productId === item.product || r.productId === item._id)
+          item.returnStatus = returnsMap.get(
+            `${order._id}-${item.product || item._id}`
           );
-          item.returnStatus = foundReturn ? foundReturn.status : undefined;
         });
       });
       setOrders(ordersData);
@@ -202,7 +216,29 @@ const Orders = ({ mode }) => {
     fetchOrdersAndReturns();
   }, []);
 
-  if (loading) return <p>Loading orders...</p>;
+  // Replaced loading text with spinner
+  if (loading) {
+    return (
+      <Container maxWidth="md" sx={{ py: { xs: 3, md: 6 }, minHeight: "100vh" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100%",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          <CircularProgress
+            sx={{
+              color: mode === "dark" ? "#FFD700" : matteColors[900],
+            }}
+          />
+        </Box>
+      </Container>
+    );
+  }
 
   const handleExpandToggle = (orderId) => {
     setExpandedOrders((prev) =>
@@ -278,9 +314,7 @@ const Orders = ({ mode }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        `${
-          process.env.REACT_APP_API_URL || "http://localhost:8000/api"
-        }/orders/${orderId}/cancel`,
+        `${process.env.REACT_APP_API_URL || "http://localhost:8000/api"}/orders/${orderId}/cancel`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -290,7 +324,7 @@ const Orders = ({ mode }) => {
       if (response.data.success) {
         setSnackbarMsg("Order cancelled successfully!");
         setSnackbarSeverity("success");
-        fetchOrdersAndReturns(); // Refresh orders
+        fetchOrdersAndReturns();
       } else {
         setSnackbarMsg(response.data.message || "Failed to cancel order.");
         setSnackbarSeverity("error");
@@ -330,14 +364,6 @@ const Orders = ({ mode }) => {
     );
   }
 
-  // Update all status displays to default to 'Pending' if order.status is missing or empty
-  const getDisplayStatus = (status) => {
-    return status && status.length > 0
-      ? status.charAt(0).toUpperCase() + status.slice(1)
-      : "Pending";
-  };
-
-  // Sort orders by createdAt descending (latest first)
   const sortedOrders = [...orders].sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
   );
@@ -354,8 +380,8 @@ const Orders = ({ mode }) => {
       }}
     >
       <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2, gap: 2 }}>
-        <Button 
-          variant="outlined" 
+        <Button
+          variant="outlined"
           onClick={fetchOrdersAndReturns}
           sx={{
             borderColor: mode === "dark" ? "#fff" : "inherit",
@@ -383,11 +409,11 @@ const Orders = ({ mode }) => {
       </Box>
       <Typography
         variant="h4"
-        sx={{ 
-          fontWeight: 800, 
-          mb: 3, 
+        sx={{
+          fontWeight: 800,
+          mb: 3,
           textAlign: "center",
-          color: mode === "dark" ? "#fff" : "inherit"
+          color: mode === "dark" ? "#fff" : "inherit",
         }}
       >
         My Orders
@@ -399,474 +425,170 @@ const Orders = ({ mode }) => {
         </Alert>
       )}
       <Grid container spacing={3}>
-        {sortedOrders.map((order) => {
-          // Debug log for order and shippingAddress
-          console.log("Order:", order);
-          console.log("Shipping Address:", order.shippingAddress);
-          return (
-            <Grid item xs={12} key={order._id}>
-              {isMobile ? (
-                // --- MOBILE: Compact, expandable/collapsible card with item-level Return/Exchange ---
-                <Paper
-                  elevation={3}
+        {sortedOrders.map((order) => (
+          <Grid item xs={12} key={order._id}>
+            {isMobile ? (
+              <Paper
+                elevation={3}
+                sx={{
+                  p: { xs: 2, sm: 3 },
+                  borderRadius: 3,
+                  boxShadow: cardColors.shadow,
+                  background: cardColors.cardBackground,
+                  border: cardColors.border,
+                  mb: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                  position: "relative",
+                }}
+              >
+                <Button
+                  onClick={() => handleExpandToggle(order._id)}
+                  size="small"
                   sx={{
-                    p: { xs: 2, sm: 3 },
-                    borderRadius: 3,
-                    boxShadow: cardColors.shadow,
-                    background: cardColors.cardBackground,
-                    border: cardColors.border,
-                    mb: 2,
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    minWidth: 0,
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    color: matteColors[900],
+                    backgroundColor: matteColors[100],
+                    boxShadow: "none",
+                    zIndex: 2,
+                    "&:hover": {
+                      backgroundColor: matteColors[800],
+                      color: "white",
+                      boxShadow: "none",
+                    },
+                  }}
+                >
+                  {expandedOrders.includes(order._id) ? (
+                    <ExpandLessIcon />
+                  ) : (
+                    <ExpandMoreIcon />
+                  )}
+                </Button>
+                <Typography
+                  variant="body2"
+                  sx={{ color: cardColors.textSecondary, fontWeight: 600, mb: 1 }}
+                >
+                  Placed on: {new Date(order.createdAt).toLocaleDateString()}
+                </Typography>
+                <Box
+                  sx={{
                     display: "flex",
                     flexDirection: "column",
                     gap: 2,
-                    position: "relative",
+                    flex: 1,
+                    mb: 2,
                   }}
                 >
-                  {/* Arrow at top right */}
-                  <Button
-                    onClick={() => handleExpandToggle(order._id)}
-                    size="small"
-                    sx={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      minWidth: 0,
-                      width: 32,
-                      height: 32,
-                      borderRadius: "50%",
-                      color: matteColors[900],
-                      backgroundColor: matteColors[100],
-                      boxShadow: "none",
-                      zIndex: 2,
-                      "&:hover": {
-                        backgroundColor: matteColors[800],
-                        color: "white",
-                        boxShadow: "none",
-                      },
-                    }}
-                  >
-                    {expandedOrders.includes(order._id) ? (
-                      <ExpandLessIcon />
-                    ) : (
-                      <ExpandMoreIcon />
-                    )}
-                  </Button>
-                  {/* Order Date at the top */}
-                  <Typography
-                    variant="body2"
-                    sx={{ color: cardColors.textSecondary, fontWeight: 600, mb: 1 }}
-                  >
-                    Placed on: {new Date(order.createdAt).toLocaleDateString()}
-                  </Typography>
-                  {/* Product Thumbnails (always visible) */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 2,
-                      flex: 1,
-                      mb: 2,
-                    }}
-                  >
-                    {(expandedOrders.includes(order._id)
-                      ? order.orderItems
-                      : order.orderItems.slice(0, 2)
-                    ).map((item, idx) => (
-                      <Box
-                        key={idx}
+                  {(expandedOrders.includes(order._id)
+                    ? order.orderItems
+                    : order.orderItems.slice(0, 2)
+                  ).map((item, idx) => (
+                    <Box
+                      key={idx}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        width: "100%",
+                      }}
+                    >
+                      <Avatar
+                        src={getImageUrl(
+                          item.image || (item.product && item.product.image)
+                        )}
+                        alt={item.name}
                         sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 2,
-                          width: "100%",
+                          width: { xs: 72, md: 64 },
+                          height: { xs: 72, md: 64 },
+                          borderRadius: 2,
+                          bgcolor: "#fafafa",
+                          border: "2px solid #e0e0e0",
+                          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                        }}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = PLACEHOLDER_IMAGE;
+                        }}
+                      />
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: 500,
+                          color: cardColors.text,
+                          flex: 1,
+                          minWidth: 0,
+                          pr: 1,
+                          overflowWrap: "break-word",
+                          whiteSpace: "normal",
+                          fontSize: "0.9rem",
                         }}
                       >
-                        <Avatar
-                          src={getImageUrl(
-                            item.image || (item.product && item.product.image)
-                          )}
-                          alt={item.name}
-                          sx={{
-                            width: { xs: 72, md: 64 },
-                            height: { xs: 72, md: 64 },
-                            borderRadius: 2,
-                            bgcolor: "#fafafa",
-                            border: "2px solid #e0e0e0",
-                            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                          }}
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = PLACEHOLDER_IMAGE;
-                          }}
-                        />
-                        <Typography
-                          variant="body1"
-                          sx={{
-                            fontWeight: 500,
-                            color: cardColors.text,
-                            flex: 1,
-                            minWidth: 0,
-                            pr: 1,
-                            overflowWrap: "break-word",
-                            whiteSpace: "normal",
-                            fontSize: "0.9rem",
-                          }}
-                        >
-                          {item.name}
-                        </Typography>
-                        {expandedOrders.includes(order._id) &&
-                          order.status === "delivered" && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              sx={{
-                                ml: 1,
-                                mr: 1,
-                                borderRadius: 8,
-                                fontSize: "0.82rem",
-                                px: 1.2,
-                                py: 0.4,
-                                minWidth: 0,
-                                minHeight: 32,
-                                color: mode === "dark" ? "#fff" : matteColors[900],
-                                borderColor: mode === "dark" ? "#fff" : matteColors[900],
-                                backgroundColor: mode === "dark" ? "transparent" : "white",
-                                textTransform: "none",
+                        {item.name}
+                      </Typography>
+                      {expandedOrders.includes(order._id) &&
+                        normalizeStatus(order.status) === "delivered" && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              ml: 1,
+                              mr: 1,
+                              borderRadius: 8,
+                              fontSize: "0.82rem",
+                              px: 1.2,
+                              py: 0.4,
+                              minWidth: 0,
+                              minHeight: 32,
+                              color: mode === "dark" ? "#fff" : matteColors[900],
+                              borderColor: mode === "dark" ? "#fff" : matteColors[900],
+                              backgroundColor: mode === "dark" ? "transparent" : "white",
+                              textTransform: "none",
+                              boxShadow: "none",
+                              whiteSpace: "nowrap",
+                              "&:hover": {
+                                backgroundColor: mode === "dark" ? "rgba(255,255,255,0.1)" : matteColors[100],
+                                borderColor: mode === "dark" ? "#FFD700" : matteColors[800],
+                                color: mode === "dark" ? "#FFD700" : matteColors[800],
                                 boxShadow: "none",
-                                whiteSpace: "nowrap",
-                                "&:hover": {
-                                  backgroundColor: mode === "dark" ? "rgba(255,255,255,0.1)" : matteColors[100],
-                                  borderColor: mode === "dark" ? "#FFD700" : matteColors[800],
-                                  color: mode === "dark" ? "#FFD700" : matteColors[800],
-                                  boxShadow: "none",
-                                },
-                              }}
-                              onClick={() =>
-                                handleOpenReturnDialog(order._id, item, idx)
-                              }
-                              disabled={item.returnStatus}
-                            >
-                              Return/Exchange
-                            </Button>
-                          )}
-                        {item.returnStatus === "return_rejected" && (
-                          <Chip
-                            label="Return Rejected"
-                            color="error"
-                            size="small"
-                            sx={{ ml: 1, fontWeight: 600 }}
-                          />
-                        )}
-                        {item.returnStatus === "approved" && (
-                          <Chip
-                            label="Return Accepted"
-                            color="success"
-                            size="small"
-                            sx={{ ml: 1, fontWeight: 600 }}
-                          />
-                        )}
-                      </Box>
-                    ))}
-                  </Box>
-                  {/* Expanded content: order info and buttons */}
-                  {expandedOrders.includes(order._id) && (
-                    <>
-                      {/* Order Info */}
-                      <Box sx={{ mb: 2, mt: 1 }}>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{
-                            fontWeight: 700,
-                            color: cardColors.textSecondary,
-                            mb: 0.5,
-                          }}
-                        >
-                          Order #{order._id}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: cardColors.textSecondary, mb: 0.5 }}
-                        >
-                          Total: <b style={{ color: cardColors.text }}>₹{order.totalPrice}</b>
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: cardColors.textSecondary, mb: 0.5 }}
-                        >
-                          Payment Type:{" "}
-                          {order.paymentInfo?.method
-                            ? order.paymentInfo.method.toUpperCase()
-                            : "N/A"}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: cardColors.textSecondary, mb: 0.5 }}
-                        >
-                          Delivery Address:{" "}
-                          {order.shippingAddress ? (
-                            <>
-                              {order.shippingAddress.name && (
-                                <>{order.shippingAddress.name}, </>
-                              )}
-                              {order.shippingAddress.address && (
-                                <>{order.shippingAddress.address}, </>
-                              )}
-                              {order.shippingAddress.city && (
-                                <>{order.shippingAddress.city}, </>
-                              )}
-                              {order.shippingAddress.state && (
-                                <>{order.shippingAddress.state}, </>
-                              )}
-                              {order.shippingAddress.postalCode && (
-                                <>{order.shippingAddress.postalCode}</>
-                              )}
-                              {order.shippingAddress.phone && (
-                                <> ({order.shippingAddress.phone})</>
-                              )}
-                            </>
-                          ) : (
-                            "N/A"
-                          )}
-                        </Typography>
-                        {order.status === "pending" || !order.status ? (
-                          <Chip
-                            label={getDisplayStatus(order.status)}
-                            icon={statusStyles[order.status]?.icon}
-                            sx={{
-                              fontWeight: 600,
-                              fontSize: "1rem",
-                              px: 2,
-                              py: 1,
-                              mt: 1,
-                              backgroundColor: statusStyles[order.status]?.bg,
-                              color: statusStyles[order.status]?.color,
-                              "& .MuiChip-icon": {
-                                color: statusStyles[order.status]?.color,
-                              },
-                            }}
-                          />
-                        ) : order.status === "confirmed" ? (
-                          <Chip
-                            label={getDisplayStatus(order.status)}
-                            icon={statusStyles[order.status]?.icon}
-                            sx={{
-                              fontWeight: 600,
-                              fontSize: "1rem",
-                              px: 2,
-                              py: 1,
-                              mt: 1,
-                              backgroundColor: statusStyles[order.status]?.bg,
-                              color: statusStyles[order.status]?.color,
-                              "& .MuiChip-icon": {
-                                color: statusStyles[order.status]?.color,
-                              },
-                            }}
-                          />
-                        ) : order.status === "shipped" ? (
-                          <Chip
-                            label={getDisplayStatus(order.status)}
-                            icon={statusStyles[order.status]?.icon}
-                            sx={{
-                              fontWeight: 600,
-                              fontSize: "1rem",
-                              px: 2,
-                              py: 1,
-                              mt: 1,
-                              backgroundColor: statusStyles[order.status]?.bg,
-                              color: statusStyles[order.status]?.color,
-                              "& .MuiChip-icon": {
-                                color: statusStyles[order.status]?.color,
-                              },
-                            }}
-                          />
-                        ) : (
-                          <Chip
-                            label={getDisplayStatus(order.status)}
-                            color={getStatusColor(order.status)}
-                            icon={getStatusIcon(order.status)}
-                            sx={{
-                              fontWeight: 600,
-                              fontSize: "1rem",
-                              px: 2,
-                              py: 1,
-                              mt: 1,
-                            }}
-                          />
-                        )}
-                      </Box>
-                      {/* Action Buttons */}
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 1.5,
-                          flexWrap: "wrap",
-                          mt: 1,
-                        }}
-                      >
-                        <Button
-                          variant="outlined"
-                          startIcon={<ViewIcon />}
-                          sx={{
-                            fontWeight: 600,
-                            minWidth: 120,
-                            borderColor: mode === "dark" ? "#fff" : matteColors[900],
-                            color: mode === "dark" ? "#fff" : matteColors[900],
-                            backgroundColor: mode === "dark" ? "transparent" : "white",
-                            py: { xs: 0.7, md: 1 },
-                            px: { xs: 2, md: 3 },
-                            fontSize: { xs: "0.92rem", md: "0.98rem" },
-                            borderRadius: 10,
-                            minHeight: { xs: 36, md: 42 },
-                            textTransform: "none",
-                            alignSelf: { xs: "stretch", md: "center" },
-                            whiteSpace: "nowrap",
-                            transition: "all 0.3s ease",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                            "&:hover": {
-                              backgroundColor: mode === "dark" ? "rgba(255,255,255,0.1)" : matteColors[100],
-                              borderColor: mode === "dark" ? "#FFD700" : matteColors[800],
-                              color: mode === "dark" ? "#FFD700" : matteColors[800],
-                              transform: "translateY(-2px)",
-                              boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
-                            },
-                          }}
-                          onClick={() => handleViewDetails(order)}
-                          fullWidth={isMobile}
-                        >
-                          View Details
-                        </Button>
-                        <Button
-                          variant="contained"
-                          startIcon={<ShippingIcon />}
-                          sx={{
-                            backgroundColor: mode === "dark" ? "#FFD700" : matteColors[900],
-                            color: mode === "dark" ? "#000" : "white",
-                            fontWeight: 600,
-                            minWidth: 120,
-                            py: { xs: 0.7, md: 1 },
-                            px: { xs: 2, md: 3 },
-                            fontSize: { xs: "0.92rem", md: "0.98rem" },
-                            borderRadius: 10,
-                            minHeight: { xs: 36, md: 42 },
-                            textTransform: "none",
-                            alignSelf: { xs: "stretch", md: "center" },
-                            whiteSpace: "nowrap",
-                            transition: "all 0.3s ease",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                            "&:hover": {
-                              backgroundColor: mode === "dark" ? "#FFC700" : matteColors[800],
-                              transform: "translateY(-2px)",
-                              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                            },
-                          }}
-                          onClick={() => handleTrackOrder(order)}
-                          fullWidth={isMobile}
-                        >
-                          Track Order
-                        </Button>
-                        {(order.status === "pending" ||
-                          order.status === "processing" ||
-                          !order.status) && (
-                          <Button
-                            variant="contained"
-                            startIcon={<CloseIcon />}
-                            sx={{
-                              backgroundColor: "#d32f2f",
-                              color: "white",
-                              fontWeight: 600,
-                              minWidth: 120,
-                              py: { xs: 0.7, md: 1 },
-                              px: { xs: 2, md: 3 },
-                              fontSize: { xs: "0.92rem", md: "0.98rem" },
-                              borderRadius: 10,
-                              minHeight: { xs: 36, md: 42 },
-                              textTransform: "none",
-                              alignSelf: { xs: "stretch", md: "center" },
-                              whiteSpace: "nowrap",
-                              transition: "all 0.3s ease",
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                              "&:hover": {
-                                backgroundColor: "#b71c1c",
-                                transform: "translateY(-2px)",
-                                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                              },
-                            }}
-                            onClick={() => handleCancelOrder(order._id)}
-                            fullWidth={isMobile}
-                          >
-                            Cancel Order
-                          </Button>
-                        )}
-                        {order.status === "delivered" && (
-                          <Button
-                            variant="contained"
-                            startIcon={<ExchangeIcon />}
-                            sx={{
-                              backgroundColor: mode === "dark" ? "#FFD700" : matteColors[900],
-                              color: mode === "dark" ? "#000" : "white",
-                              fontWeight: 600,
-                              minWidth: 170,
-                              py: { xs: 0.7, md: 1 },
-                              px: { xs: 2, md: 3 },
-                              fontSize: { xs: "0.92rem", md: "0.98rem" },
-                              borderRadius: 10,
-                              minHeight: { xs: 36, md: 42 },
-                              textTransform: "none",
-                              alignSelf: { xs: "stretch", md: "center" },
-                              whiteSpace: "nowrap",
-                              transition: "all 0.3s ease",
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                              "&:hover": {
-                                backgroundColor: mode === "dark" ? "#FFC700" : matteColors[800],
-                                transform: "translateY(-2px)",
-                                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                               },
                             }}
                             onClick={() =>
-                              handleOpenReturnDialog(
-                                order._id,
-                                order.orderItems[0],
-                                0
-                              )
+                              handleOpenReturnDialog(order._id, item, idx)
                             }
-                            disabled={order.orderItems[0].returnStatus}
-                            fullWidth={isMobile}
+                            disabled={item.returnStatus}
                           >
-                            Return
+                            Return/Exchange
                           </Button>
                         )}
-                      </Box>
-                    </>
-                  )}
-                </Paper>
-              ) : (
-                // --- DESKTOP: Original always-expanded card, no expand/collapse, no item-level Return/Exchange ---
-                <Paper
-                  elevation={3}
-                  sx={{
-                    p: { xs: 2.5, sm: 4 },
-                    borderRadius: 3,
-                    boxShadow: cardColors.shadow,
-                    background: cardColors.cardBackground,
-                    border: cardColors.border,
-                    mb: 2,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2.5,
-                  }}
-                >
-                  {/* Order Summary */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: { xs: "column", sm: "row" },
-                      alignItems: { sm: "center" },
-                      justifyContent: "space-between",
-                      mb: 1,
-                    }}
-                  >
-                    <Box>
+                      {item.returnStatus === "return_rejected" && (
+                        <Chip
+                          label="Return Rejected"
+                          color="error"
+                          size="small"
+                          sx={{ ml: 1, fontWeight: 600 }}
+                        />
+                      )}
+                      {item.returnStatus === "approved" && (
+                        <Chip
+                          label="Return Accepted"
+                          color="success"
+                          size="small"
+                          sx={{ ml: 1, fontWeight: 600 }}
+                        />
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+                {expandedOrders.includes(order._id) && (
+                  <>
+                    <Box sx={{ mb: 2, mt: 1 }}>
                       <Typography
                         variant="subtitle2"
                         sx={{
@@ -876,13 +598,6 @@ const Orders = ({ mode }) => {
                         }}
                       >
                         Order #{order._id}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: cardColors.textSecondary, mb: 0.5 }}
-                      >
-                        Placed on:{" "}
-                        {new Date(order.createdAt).toLocaleDateString()}
                       </Typography>
                       <Typography
                         variant="body2"
@@ -929,150 +644,400 @@ const Orders = ({ mode }) => {
                           "N/A"
                         )}
                       </Typography>
+                      <Chip
+                        label={getDisplayStatus(order.status)}
+                        icon={statusStyles[normalizeStatus(order.status)]?.icon}
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: "1rem",
+                          px: 2,
+                          py: 1,
+                          mt: 1,
+                          backgroundColor: statusStyles[normalizeStatus(order.status)]?.bg,
+                          color: statusStyles[normalizeStatus(order.status)]?.color,
+                          "& .MuiChip-icon": {
+                            color: statusStyles[normalizeStatus(order.status)]?.color,
+                          },
+                        }}
+                      />
                     </Box>
-                    {order.status === "pending" || !order.status ? (
-                      <Chip
-                        label={getDisplayStatus(order.status)}
-                        icon={statusStyles[order.status]?.icon}
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: "1rem",
-                          px: 2,
-                          py: 1,
-                          mt: { xs: 2, sm: 0 },
-                          backgroundColor: statusStyles[order.status]?.bg,
-                          color: statusStyles[order.status]?.color,
-                          "& .MuiChip-icon": {
-                            color: statusStyles[order.status]?.color,
-                          },
-                        }}
-                      />
-                    ) : order.status === "confirmed" ? (
-                      <Chip
-                        label={getDisplayStatus(order.status)}
-                        icon={statusStyles[order.status]?.icon}
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: "1rem",
-                          px: 2,
-                          py: 1,
-                          mt: { xs: 2, sm: 0 },
-                          backgroundColor: statusStyles[order.status]?.bg,
-                          color: statusStyles[order.status]?.color,
-                          "& .MuiChip-icon": {
-                            color: statusStyles[order.status]?.color,
-                          },
-                        }}
-                      />
-                    ) : order.status === "shipped" ? (
-                      <Chip
-                        label={getDisplayStatus(order.status)}
-                        icon={statusStyles[order.status]?.icon}
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: "1rem",
-                          px: 2,
-                          py: 1,
-                          mt: { xs: 2, sm: 0 },
-                          backgroundColor: statusStyles[order.status]?.bg,
-                          color: statusStyles[order.status]?.color,
-                          "& .MuiChip-icon": {
-                            color: statusStyles[order.status]?.color,
-                          },
-                        }}
-                      />
-                    ) : (
-                      <Chip
-                        label={getDisplayStatus(order.status)}
-                        color={getStatusColor(order.status)}
-                        icon={getStatusIcon(order.status)}
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: "1rem",
-                          px: 2,
-                          py: 1,
-                          mt: { xs: 2, sm: 0 },
-                        }}
-                      />
-                    )}
-                  </Box>
-                  {/* Product Thumbnails (all items) */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                      flexWrap: "wrap",
-                      mb: 1,
-                    }}
-                  >
-                    {order.orderItems.map((item, idx) => (
-                      <Box
-                        key={idx}
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                      >
-                        <Avatar
-                          src={getImageUrl(
-                            item.image || (item.product && item.product.image)
-                          )}
-                          alt={item.name}
-                          sx={{
-                            width: { xs: 64, md: 56 },
-                            height: { xs: 64, md: 56 },
-                            borderRadius: 2,
-                            bgcolor: "#fafafa",
-                            border: "1px solid #eee",
-                          }}
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = PLACEHOLDER_IMAGE;
-                          }}
-                        />
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 500,
-                            color: cardColors.text,
-                            maxWidth: 100,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {item.name}
-                        </Typography>
-                        {item.returnStatus === "return_rejected" && (
-                          <Chip
-                            label="Return Rejected"
-                            color="error"
-                            size="small"
-                            sx={{ ml: 1, fontWeight: 600 }}
-                          />
-                        )}
-                        {item.returnStatus === "approved" && (
-                          <Chip
-                            label="Return Accepted"
-                            color="success"
-                            size="small"
-                            sx={{ ml: 1, fontWeight: 600 }}
-                          />
-                        )}
-                      </Box>
-                    ))}
-                  </Box>
-                  {/* Action Buttons */}
-                  <Box
-                    sx={{ display: "flex", gap: 2, flexWrap: "wrap", mt: 1 }}
-                  >
-                    <Button
-                      variant="outlined"
-                      startIcon={<ViewIcon />}
+                    <Box
                       sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1.5,
+                        flexWrap: "wrap",
+                        mt: 1,
+                      }}
+                    >
+                      <Button
+                        variant="outlined"
+                        startIcon={<ViewIcon />}
+                        sx={{
+                          fontWeight: 600,
+                          minWidth: 120,
+                          borderColor: mode === "dark" ? "#fff" : matteColors[900],
+                          color: mode === "dark" ? "#fff" : matteColors[900],
+                          backgroundColor: mode === "dark" ? "transparent" : "white",
+                          py: { xs: 0.7, md: 1 },
+                          px: { xs: 2, md: 3 },
+                          fontSize: { xs: "0.92rem", md: "0.98rem" },
+                          borderRadius: 10,
+                          minHeight: { xs: 36, md: 42 },
+                          textTransform: "none",
+                          alignSelf: { xs: "stretch", md: "center" },
+                          whiteSpace: "nowrap",
+                          transition: "all 0.3s ease",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                          "&:hover": {
+                            backgroundColor: mode === "dark" ? "rgba(255,255,255,0.1)" : matteColors[100],
+                            borderColor: mode === "dark" ? "#FFD700" : matteColors[800],
+                            color: mode === "dark" ? "#FFD700" : matteColors[800],
+                            transform: "translateY(-2px)",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
+                          },
+                        }}
+                        onClick={() => handleViewDetails(order)}
+                        fullWidth={isMobile}
+                      >
+                        View Details
+                      </Button>
+                      <Button
+                        variant="contained"
+                        startIcon={<ShippingIcon />}
+                        sx={{
+                          backgroundColor: mode === "dark" ? "#FFD700" : matteColors[900],
+                          color: mode === "dark" ? "#000" : "white",
+                          fontWeight: 600,
+                          minWidth: 120,
+                          py: { xs: 0.7, md: 1 },
+                          px: { xs: 2, md: 3 },
+                          fontSize: { xs: "0.92rem", md: "0.98rem" },
+                          borderRadius: 10,
+                          minHeight: { xs: 36, md: 42 },
+                          textTransform: "none",
+                          alignSelf: { xs: "stretch", md: "center" },
+                          whiteSpace: "nowrap",
+                          transition: "all 0.3s ease",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                          "&:hover": {
+                            backgroundColor: mode === "dark" ? "#FFC700" : matteColors[800],
+                            transform: "translateY(-2px)",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                          },
+                        }}
+                        onClick={() => handleTrackOrder(order)}
+                        fullWidth={isMobile}
+                      >
+                        Track Order
+                      </Button>
+                      {(normalizeStatus(order.status) === "pending" ||
+                        normalizeStatus(order.status) === "processing") && (
+                        <Button
+                          variant="contained"
+                          startIcon={<CloseIcon />}
+                          sx={{
+                            backgroundColor: "#d32f2f",
+                            color: "white",
+                            fontWeight: 600,
+                            minWidth: 120,
+                            py: { xs: 0.7, md: 1 },
+                            px: { xs: 2, md: 3 },
+                            fontSize: { xs: "0.92rem", md: "0.98rem" },
+                            borderRadius: 10,
+                            minHeight: { xs: 36, md: 42 },
+                            textTransform: "none",
+                            alignSelf: { xs: "stretch", md: "center" },
+                            whiteSpace: "nowrap",
+                            transition: "all 0.3s ease",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                            "&:hover": {
+                              backgroundColor: "#b71c1c",
+                              transform: "translateY(-2px)",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                            },
+                          }}
+                          onClick={() => handleCancelOrder(order._id)}
+                          fullWidth={isMobile}
+                        >
+                          Cancel Order
+                        </Button>
+                      )}
+                      {normalizeStatus(order.status) === "delivered" && (
+                        <Button
+                          variant="contained"
+                          startIcon={<ExchangeIcon />}
+                          sx={{
+                            backgroundColor: mode === "dark" ? "#FFD700" : matteColors[900],
+                            color: mode === "dark" ? "#000" : "white",
+                            fontWeight: 600,
+                            minWidth: 170,
+                            py: { xs: 0.7, md: 1 },
+                            px: { xs: 2, md: 3 },
+                            fontSize: { xs: "0.92rem", md: "0.98rem" },
+                            borderRadius: 10,
+                            minHeight: { xs: 36, md: 42 },
+                            textTransform: "none",
+                            alignSelf: { xs: "stretch", md: "center" },
+                            whiteSpace: "nowrap",
+                            transition: "all 0.3s ease",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                            "&:hover": {
+                              backgroundColor: mode === "dark" ? "#FFC700" : matteColors[800],
+                              transform: "translateY(-2px)",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                            },
+                          }}
+                          onClick={() =>
+                            handleOpenReturnDialog(order._id, order.orderItems[0], 0)
+                          }
+                          disabled={order.orderItems[0].returnStatus}
+                          fullWidth={isMobile}
+                        >
+                          Return
+                        </Button>
+                      )}
+                    </Box>
+                  </>
+                )}
+              </Paper>
+            ) : (
+              <Paper
+                elevation={3}
+                sx={{
+                  p: { xs: 2.5, sm: 4 },
+                  borderRadius: 3,
+                  boxShadow: cardColors.shadow,
+                  background: cardColors.cardBackground,
+                  border: cardColors.border,
+                  mb: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2.5,
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: { xs: "column", sm: "row" },
+                    alignItems: { sm: "center" },
+                    justifyContent: "space-between",
+                    mb: 1,
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        fontWeight: 700,
+                        color: cardColors.textSecondary,
+                        mb: 0.5,
+                      }}
+                    >
+                      Order #{order._id}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: cardColors.textSecondary, mb: 0.5 }}
+                    >
+                      Placed on: {new Date(order.createdAt).toLocaleDateString()}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: cardColors.textSecondary, mb: 0.5 }}
+                    >
+                      Total: <b style={{ color: cardColors.text }}>₹{order.totalPrice}</b>
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: cardColors.textSecondary, mb: 0.5 }}
+                    >
+                      Payment Type:{" "}
+                      {order.paymentInfo?.method
+                        ? order.paymentInfo.method.toUpperCase()
+                        : "N/A"}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: cardColors.textSecondary, mb: 0.5 }}
+                    >
+                      Delivery Address:{" "}
+                      {order.shippingAddress ? (
+                        <>
+                          {order.shippingAddress.name && (
+                            <>{order.shippingAddress.name}, </>
+                          )}
+                          {order.shippingAddress.address && (
+                            <>{order.shippingAddress.address}, </>
+                          )}
+                          {order.shippingAddress.city && (
+                            <>{order.shippingAddress.city}, </>
+                          )}
+                          {order.shippingAddress.state && (
+                            <>{order.shippingAddress.state}, </>
+                          )}
+                          {order.shippingAddress.postalCode && (
+                            <>{order.shippingAddress.postalCode}</>
+                          )}
+                          {order.shippingAddress.phone && (
+                            <> ({order.shippingAddress.phone})</>
+                          )}
+                        </>
+                      ) : (
+                        "N/A"
+                      )}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={getDisplayStatus(order.status)}
+                    icon={statusStyles[normalizeStatus(order.status)]?.icon}
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: "1rem",
+                      px: 2,
+                      py: 1,
+                      mt: { xs: 2, sm: 0 },
+                      backgroundColor: statusStyles[normalizeStatus(order.status)]?.bg,
+                      color: statusStyles[normalizeStatus(order.status)]?.color,
+                      "& .MuiChip-icon": {
+                        color: statusStyles[normalizeStatus(order.status)]?.color,
+                      },
+                    }}
+                  />
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    flexWrap: "wrap",
+                    mb: 1,
+                  }}
+                >
+                  {order.orderItems.map((item, idx) => (
+                    <Box
+                      key={idx}
+                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    >
+                      <Avatar
+                        src={getImageUrl(
+                          item.image || (item.product && item.product.image)
+                        )}
+                        alt={item.name}
+                        sx={{
+                          width: { xs: 64, md: 56 },
+                          height: { xs: 64, md: 56 },
+                          borderRadius: 2,
+                          bgcolor: "#fafafa",
+                          border: "1px solid #eee",
+                        }}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = PLACEHOLDER_IMAGE;
+                        }}
+                      />
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 500,
+                          color: cardColors.text,
+                          maxWidth: 100,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {item.name}
+                      </Typography>
+                      {item.returnStatus === "return_rejected" && (
+                        <Chip
+                          label="Return Rejected"
+                          color="error"
+                          size="small"
+                          sx={{ ml: 1, fontWeight: 600 }}
+                        />
+                      )}
+                      {item.returnStatus === "approved" && (
+                        <Chip
+                          label="Return Accepted"
+                          color="success"
+                          size="small"
+                          sx={{ ml: 1, fontWeight: 600 }}
+                        />
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mt: 1 }}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<ViewIcon />}
+                    sx={{
+                      fontWeight: 600,
+                      minWidth: 120,
+                      borderColor: matteColors[900],
+                      color: matteColors[900],
+                      backgroundColor: "white",
+                      py: { xs: 0.7, md: 1 },
+                      px: { xs: 2, md: 3 },
+                      fontSize: { xs: "0.92rem", md: "0.98rem" },
+                      borderRadius: 10,
+                      minHeight: { xs: 36, md: 42 },
+                      textTransform: "none",
+                      alignSelf: "center",
+                      whiteSpace: "nowrap",
+                      transition: "all 0.3s ease",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                      "&:hover": {
+                        backgroundColor: matteColors[100],
+                        borderColor: matteColors[800],
+                        color: matteColors[800],
+                        transform: "translateY(-2px)",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
+                      },
+                    }}
+                    onClick={() => handleViewDetails(order)}
+                  >
+                    View Details
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<ShippingIcon />}
+                    sx={{
+                      backgroundColor: matteColors[900],
+                      color: "white",
+                      fontWeight: 600,
+                      minWidth: 120,
+                      py: { xs: 0.7, md: 1 },
+                      px: { xs: 2, md: 3 },
+                      fontSize: { xs: "0.92rem", md: "0.98rem" },
+                      borderRadius: 10,
+                      minHeight: { xs: 36, md: 42 },
+                      textTransform: "none",
+                      alignSelf: "center",
+                      whiteSpace: "nowrap",
+                      transition: "all 0.3s ease",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                      "&:hover": {
+                        backgroundColor: matteColors[800],
+                        transform: "translateY(-2px)",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      },
+                    }}
+                    onClick={() => handleTrackOrder(order)}
+                  >
+                    Track Order
+                  </Button>
+                  {(normalizeStatus(order.status) === "pending" ||
+                    normalizeStatus(order.status) === "processing") && (
+                    <Button
+                      variant="contained"
+                      startIcon={<CloseIcon />}
+                      sx={{
+                        backgroundColor: "#d32f2f",
+                        color: "white",
                         fontWeight: 600,
                         minWidth: 120,
-                        borderColor: matteColors[900],
-                        color: matteColors[900],
-                        backgroundColor: "white",
                         py: { xs: 0.7, md: 1 },
                         px: { xs: 2, md: 3 },
                         fontSize: { xs: "0.92rem", md: "0.98rem" },
@@ -1084,25 +1049,25 @@ const Orders = ({ mode }) => {
                         transition: "all 0.3s ease",
                         boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
                         "&:hover": {
-                          backgroundColor: matteColors[100],
-                          borderColor: matteColors[800],
-                          color: matteColors[800],
+                          backgroundColor: "#b71c1c",
                           transform: "translateY(-2px)",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                         },
                       }}
-                      onClick={() => handleViewDetails(order)}
+                      onClick={() => handleCancelOrder(order._id)}
                     >
-                      View Details
+                      Cancel Order
                     </Button>
+                  )}
+                  {normalizeStatus(order.status) === "delivered" && (
                     <Button
                       variant="contained"
-                      startIcon={<ShippingIcon />}
+                      startIcon={<ExchangeIcon />}
                       sx={{
                         backgroundColor: matteColors[900],
                         color: "white",
                         fontWeight: 600,
-                        minWidth: 120,
+                        minWidth: 170,
                         py: { xs: 0.7, md: 1 },
                         px: { xs: 2, md: 3 },
                         fontSize: { xs: "0.92rem", md: "0.98rem" },
@@ -1119,85 +1084,19 @@ const Orders = ({ mode }) => {
                           boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                         },
                       }}
-                      onClick={() => handleTrackOrder(order)}
+                      onClick={() =>
+                        handleOpenReturnDialog(order._id, order.orderItems[0], 0)
+                      }
+                      disabled={order.orderItems[0].returnStatus}
                     >
-                      Track Order
+                      Return
                     </Button>
-                    {(order.status === "pending" ||
-                      order.status === "processing" ||
-                      !order.status) && (
-                      <Button
-                        variant="contained"
-                        startIcon={<CloseIcon />}
-                        sx={{
-                          backgroundColor: "#d32f2f",
-                          color: "white",
-                          fontWeight: 600,
-                          minWidth: 120,
-                          py: { xs: 0.7, md: 1 },
-                          px: { xs: 2, md: 3 },
-                          fontSize: { xs: "0.92rem", md: "0.98rem" },
-                          borderRadius: 10,
-                          minHeight: { xs: 36, md: 42 },
-                          textTransform: "none",
-                          alignSelf: "center",
-                          whiteSpace: "nowrap",
-                          transition: "all 0.3s ease",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                          "&:hover": {
-                            backgroundColor: "#b71c1c",
-                            transform: "translateY(-2px)",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                          },
-                        }}
-                        onClick={() => handleCancelOrder(order._id)}
-                      >
-                        Cancel Order
-                      </Button>
-                    )}
-                    {order.status === "delivered" && (
-                      <Button
-                        variant="contained"
-                        startIcon={<ExchangeIcon />}
-                        sx={{
-                          backgroundColor: matteColors[900],
-                          color: "white",
-                          fontWeight: 600,
-                          minWidth: 170,
-                          py: { xs: 0.7, md: 1 },
-                          px: { xs: 2, md: 3 },
-                          fontSize: { xs: "0.92rem", md: "0.98rem" },
-                          borderRadius: 10,
-                          minHeight: { xs: 36, md: 42 },
-                          textTransform: "none",
-                          alignSelf: "center",
-                          whiteSpace: "nowrap",
-                          transition: "all 0.3s ease",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                          "&:hover": {
-                            backgroundColor: matteColors[800],
-                            transform: "translateY(-2px)",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                          },
-                        }}
-                        onClick={() =>
-                          handleOpenReturnDialog(
-                            order._id,
-                            order.orderItems[0],
-                            0
-                          )
-                        }
-                        disabled={order.orderItems[0].returnStatus}
-                      >
-                        Return
-                      </Button>
-                    )}
-                  </Box>
-                </Paper>
-              )}
-            </Grid>
-          );
-        })}
+                  )}
+                </Box>
+              </Paper>
+            )}
+          </Grid>
+        ))}
       </Grid>
 
       {/* View Details Dialog */}
@@ -1210,8 +1109,7 @@ const Orders = ({ mode }) => {
                 Order #{selectedOrder._id}
               </Typography>
               <Typography variant="body2" sx={{ mb: 1 }}>
-                Placed on:{" "}
-                {new Date(selectedOrder.createdAt).toLocaleDateString()}
+                Placed on: {new Date(selectedOrder.createdAt).toLocaleDateString()}
               </Typography>
               <Typography variant="body2" sx={{ mb: 1 }}>
                 Delivery Address:{" "}
@@ -1282,53 +1180,18 @@ const Orders = ({ mode }) => {
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 600, mt: 1 }}>
                 Status:{" "}
-                {selectedOrder.status === "pending" || !selectedOrder.status ? (
-                  <Chip
-                    label={getDisplayStatus(selectedOrder.status)}
-                    icon={statusStyles[selectedOrder.status]?.icon}
-                    size="small"
-                    sx={{
-                      backgroundColor: statusStyles[selectedOrder.status]?.bg,
-                      color: statusStyles[selectedOrder.status]?.color,
-                      "& .MuiChip-icon": {
-                        color: statusStyles[selectedOrder.status]?.color,
-                      },
-                    }}
-                  />
-                ) : selectedOrder.status === "confirmed" ? (
-                  <Chip
-                    label={getDisplayStatus(selectedOrder.status)}
-                    icon={statusStyles[selectedOrder.status]?.icon}
-                    size="small"
-                    sx={{
-                      backgroundColor: statusStyles[selectedOrder.status]?.bg,
-                      color: statusStyles[selectedOrder.status]?.color,
-                      "& .MuiChip-icon": {
-                        color: statusStyles[selectedOrder.status]?.color,
-                      },
-                    }}
-                  />
-                ) : selectedOrder.status === "shipped" ? (
-                  <Chip
-                    label={getDisplayStatus(selectedOrder.status)}
-                    icon={statusStyles[selectedOrder.status]?.icon}
-                    size="small"
-                    sx={{
-                      backgroundColor: statusStyles[selectedOrder.status]?.bg,
-                      color: statusStyles[selectedOrder.status]?.color,
-                      "& .MuiChip-icon": {
-                        color: statusStyles[selectedOrder.status]?.color,
-                      },
-                    }}
-                  />
-                ) : (
-                  <Chip
-                    label={getDisplayStatus(selectedOrder.status)}
-                    color={getStatusColor(selectedOrder.status)}
-                    size="small"
-                    icon={getStatusIcon(selectedOrder.status)}
-                  />
-                )}
+                <Chip
+                  label={getDisplayStatus(selectedOrder.status)}
+                  icon={statusStyles[normalizeStatus(selectedOrder.status)]?.icon}
+                  size="small"
+                  sx={{
+                    backgroundColor: statusStyles[normalizeStatus(selectedOrder.status)]?.bg,
+                    color: statusStyles[normalizeStatus(selectedOrder.status)]?.color,
+                    "& .MuiChip-icon": {
+                      color: statusStyles[normalizeStatus(selectedOrder.status)]?.color,
+                    },
+                  }}
+                />
               </Typography>
             </Box>
           )}
@@ -1367,26 +1230,16 @@ const Orders = ({ mode }) => {
         <DialogContent dividers>
           {selectedOrder && (
             <Box>
+              {/* Log status for debugging */}
+              {console.log("Tracking order status:", selectedOrder.status)}
               <Stepper
-                activeStep={
-                  selectedOrder.status === "delivered"
-                    ? 4
-                    : selectedOrder.status === "shipped"
-                    ? 2
-                    : selectedOrder.status === "processing"
-                    ? 1
-                    : 0
-                }
+                activeStep={getStepperIndex(selectedOrder.status)}
                 orientation="vertical"
               >
                 {trackingSteps.map((label, idx) => (
                   <Step
                     key={label}
-                    completed={
-                      (selectedOrder.status === "delivered" && idx <= 4) ||
-                      (selectedOrder.status === "shipped" && idx <= 2) ||
-                      (selectedOrder.status === "processing" && idx <= 1)
-                    }
+                    completed={idx <= getStepperIndex(selectedOrder.status)}
                   >
                     <StepLabel>{label}</StepLabel>
                   </Step>
@@ -1395,54 +1248,18 @@ const Orders = ({ mode }) => {
               <Box sx={{ mt: 3 }}>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                   Current Status:{" "}
-                  {selectedOrder.status === "pending" ||
-                  !selectedOrder.status ? (
-                    <Chip
-                      label={getDisplayStatus(selectedOrder.status)}
-                      icon={statusStyles[selectedOrder.status]?.icon}
-                      size="small"
-                      sx={{
-                        backgroundColor: statusStyles[selectedOrder.status]?.bg,
-                        color: statusStyles[selectedOrder.status]?.color,
-                        "& .MuiChip-icon": {
-                          color: statusStyles[selectedOrder.status]?.color,
-                        },
-                      }}
-                    />
-                  ) : selectedOrder.status === "confirmed" ? (
-                    <Chip
-                      label={getDisplayStatus(selectedOrder.status)}
-                      icon={statusStyles[selectedOrder.status]?.icon}
-                      size="small"
-                      sx={{
-                        backgroundColor: statusStyles[selectedOrder.status]?.bg,
-                        color: statusStyles[selectedOrder.status]?.color,
-                        "& .MuiChip-icon": {
-                          color: statusStyles[selectedOrder.status]?.color,
-                        },
-                      }}
-                    />
-                  ) : selectedOrder.status === "shipped" ? (
-                    <Chip
-                      label={getDisplayStatus(selectedOrder.status)}
-                      icon={statusStyles[selectedOrder.status]?.icon}
-                      size="small"
-                      sx={{
-                        backgroundColor: statusStyles[selectedOrder.status]?.bg,
-                        color: statusStyles[selectedOrder.status]?.color,
-                        "& .MuiChip-icon": {
-                          color: statusStyles[selectedOrder.status]?.color,
-                        },
-                      }}
-                    />
-                  ) : (
-                    <Chip
-                      label={getDisplayStatus(selectedOrder.status)}
-                      color={getStatusColor(selectedOrder.status)}
-                      size="small"
-                      icon={getStatusIcon(selectedOrder.status)}
-                    />
-                  )}
+                  <Chip
+                    label={getDisplayStatus(selectedOrder.status)}
+                    icon={statusStyles[normalizeStatus(selectedOrder.status)]?.icon}
+                    size="small"
+                    sx={{
+                      backgroundColor: statusStyles[normalizeStatus(selectedOrder.status)]?.bg,
+                      color: statusStyles[normalizeStatus(selectedOrder.status)]?.color,
+                      "& .MuiChip-icon": {
+                        color: statusStyles[normalizeStatus(selectedOrder.status)]?.color,
+                      },
+                    }}
+                  />
                 </Typography>
               </Box>
             </Box>
@@ -1483,7 +1300,6 @@ const Orders = ({ mode }) => {
         maxWidth="xs"
         fullWidth
       >
-        {console.log("Return dialog open state:", returnDialogOpen)}
         <form onSubmit={handleSubmitReturn}>
           <DialogTitle>Return - {returnItem?.item?.name}</DialogTitle>
           <DialogContent dividers>

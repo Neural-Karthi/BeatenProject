@@ -14,3 +14,8 @@
   font-weight: 600;
   display: inline-block;
 } 
+
+
+body{
+  user-select: none;
+}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -51,6 +51,7 @@ import Contact from "./pages/Contact";
 import Notifies from "./pages/Notifies";
 import Wishlist from "./pages/Wishlist";
 import Account from "./pages/Account";
+import Preload from "./pages/Preload";
 
 // Create theme
 const theme = createTheme({
@@ -166,11 +167,32 @@ const theme = createTheme({
 const App = () => {
   // Add dark/light mode state here
   const [mode, setMode] = useState("light");
+
   const toggleColorMode = () =>
     setMode((prev) => (prev === "light" ? "dark" : "light"));
 
-  console.log("Header mode:", mode);
-  console.log("App mode:", mode);
+const [isOnline, setIsOnline] = useState(navigator.onLine);
+const [showPreload, setShowPreload] = useState(true);
+
+// Handle network status
+useEffect(() => {
+  const handleOnline = () => setIsOnline(true);
+  const handleOffline = () => setIsOnline(false);
+
+  window.addEventListener("online", handleOnline);
+  window.addEventListener("offline", handleOffline);
+
+  return () => {
+    window.removeEventListener("online", handleOnline);
+    window.removeEventListener("offline", handleOffline);
+  };
+}, []);
+
+// Preload screen timeout (5 seconds)
+useEffect(() => {
+  let timer = setTimeout(() => setShowPreload(false), 5000);
+  return () => clearTimeout(timer);
+}, []);
 
   const handleMoveToCart = (item) => {
     // TODO: implement move to cart logic
@@ -192,7 +214,13 @@ const App = () => {
     // TODO: implement delete address logic
   };
 
+
+
   return (
+     <>
+    {showPreload ? (
+      <Preload mode={mode} />
+    ) : (
     <Router>
       <ScrollToTop />
       <ErrorBoundary>
@@ -308,6 +336,8 @@ const App = () => {
         </ThemeProvider>
       </ErrorBoundary>
     </Router>
+    )}
+    </>
   );
 };
 

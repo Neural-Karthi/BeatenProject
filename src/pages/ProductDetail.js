@@ -109,16 +109,30 @@ const ProductDetail = ({ mode }) => {
     }
   };
 
-  const handlePincodeCheck = () => {
-    if (pincode.length === 6) {
-      setDeliveryInfo({
-        date: "Thursday, 24 Jul",
-        cod: "Available",
-      });
-    } else {
-      setDeliveryInfo(null);
-    }
-  };
+ const handlePincodeCheck = () => {
+  if (pincode.length === 6) {
+    const today = new Date();
+    const day = today.getDay(); // Sunday = 0, Saturday = 6
+
+    const deliveryDate = new Date(today);
+    const addDays = (day === 0 || day === 6) ? 8 : 6;
+    deliveryDate.setDate(deliveryDate.getDate() + addDays);
+
+    const formattedDate = deliveryDate.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).replace(',', '');
+
+    setDeliveryInfo({
+      date: formattedDate, // Only the formatted date like "12 Jul 2025"
+      cod: "Available",
+    });
+  } else {
+    setDeliveryInfo(null);
+  }
+};
+
 
   const [reviews, setReviews] = useState([]);
   const [userRating, setUserRating] = useState(0);
