@@ -1,40 +1,22 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Container,
-  Grid,
   Typography,
   Box,
   Card,
-  CardContent,
   CardMedia,
   CardActionArea,
-  Button,
   useTheme,
   useMediaQuery,
-  Paper,
+  CircularProgress,
 } from "@mui/material";
-import { ArrowForward as ArrowForwardIcon } from "@mui/icons-material";
 import { fetchCollections } from "../api/newsContentAPI";
-import { useState, useEffect } from "react";
 
-// const collectionsImages = [
-//     "https://res.cloudinary.com/dk6rrrwum/image/upload/v1753160034/Untitled_design_4_xdxk63.webp",
-//     "https://res.cloudinary.com/dk6rrrwum/image/upload/v1753160015/Untitled-design.png_wtqxpu.webp",
-//     "https://res.cloudinary.com/dk6rrrwum/image/upload/v1753160015/Untitled-design.png_wtqxpu.webp",
-//     "https://res.cloudinary.com/dk6rrrwum/image/upload/v1753160033/Untitled_design_2_ax5pcj.webp",
-//     "https://res.cloudinary.com/dk6rrrwum/image/upload/v1753160033/Untitled_design_3_rcdkbr.webp",
-//     "https://res.cloudinary.com/dk6rrrwum/image/upload/v1753160015/Untitled_design_7_nobm8f.webp",
-//     "https://res.cloudinary.com/dk6rrrwum/image/upload/v1753160033/Untitled_design_1_lv7gwy.webp",
-//     "https://res.cloudinary.com/dk6rrrwum/image/upload/v1753160015/Untitled_design_5_o88gjf.webp",
-//     "https://res.cloudinary.com/dk6rrrwum/image/upload/v1753160015/Untitled_design_6_cnuohw.webp",
-//     "https://res.cloudinary.com/dk6rrrwum/image/upload/v1753160046/Untitled_design_4_1_dk8ki3.webp",
-// ];
-
-
-
-const Collections = () => {
+const Collections = ({ mode }) => {
   const [collectionsImages, setCollectionsImages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const DATA_ENTRY_ID = 1;
   const navigate = useNavigate();
   const theme = useTheme();
@@ -43,12 +25,17 @@ const Collections = () => {
   useEffect(() => {
     const getCollections = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const data = await fetchCollections(DATA_ENTRY_ID);
-        console.log(data.collections);
-        
-        setCollectionsImages(data.collections);
+        console.log("Fetched collections:", data.collections);
+        setCollectionsImages(data.collections || []);
       } catch (err) {
+        console.error("Error fetching collections:", err);
+        setError("Failed to load collections");
         setCollectionsImages([]);
+      } finally {
+        setLoading(false);
       }
     };
     getCollections();
@@ -57,60 +44,77 @@ const Collections = () => {
   const collections = [
     {
       id: "best-sellers",
-      name: "Best Sellars",
-      image: collectionsImages[0],
+      name: "Best Sellers",
+      image: collectionsImages[0] || "/images/placeholder.png",
     },
     {
-      id: "tshirts",
-      name: "Tshirts",
-      image: collectionsImages[1],
+      id: "t-shirts",
+      name: "T-Shirts",
+      image: collectionsImages[1] || "/images/placeholder.png",
     },
     {
       id: "shirts",
       name: "Shirts",
-      image: collectionsImages[2],
-    },
-    {
-      id: "polo-t-shirts",
-      name: "Polo T-shirts",
-      image: collectionsImages[3],
+      image: collectionsImages[2] || "/images/placeholder.png",
     },
     {
       id: "oversized-t-shirts",
-      name: "Oversized T-shirts",
-      image: collectionsImages[4],
+      name: "Oversized T-Shirts",
+      image: collectionsImages[3] || "/images/placeholder.png",
     },
     {
       id: "bottom-wear",
       name: "Bottom Wear",
-      image: collectionsImages[5],
+      image: collectionsImages[4] || "/images/placeholder.png",
     },
     {
       id: "cargo-pants",
       name: "Cargo Pants",
-      image: collectionsImages[6],
+      image: collectionsImages[5] || "/images/placeholder.png",
     },
     {
       id: "jackets",
       name: "Jackets",
-      image: collectionsImages[7],
+      image: collectionsImages[6] || "/images/placeholder.png",
     },
     {
       id: "hoodies",
       name: "Hoodies",
-      image: collectionsImages[8],
+      image: collectionsImages[7] || "/images/placeholder.png",
     },
     {
       id: "co-ord-sets",
       name: "Co-Ord Sets",
-      image: collectionsImages[9],
+      image: collectionsImages[8] || "/images/placeholder.png",
     },
   ];
 
+  const handleCollectionClick = (id) => {
+    console.log("Navigating to:", id === "best-sellers" ? `/products?sort=best-sellers` : `/products?category=${encodeURIComponent(id)}`);
+    if (id === "best-sellers") {
+      navigate("/products?sort=best-sellers");
+    } else {
+      navigate(`/products?category=${encodeURIComponent(id)}`);
+    }
+  };
 
-  // Add a royalty-free human PNG image URL
-  const humanPng =
-    "https://pngimg.com/uploads/businessman/businessman_PNG6567.png"; // Example PNG with transparency
+  if (loading) {
+    return (
+      <Container sx={{ py: 8, textAlign: "center", bgcolor: theme.palette.background.default }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container sx={{ py: 8, textAlign: "center", bgcolor: theme.palette.background.default }}>
+        <Typography variant="h6" color="error">
+          {error}
+        </Typography>
+      </Container>
+    );
+  }
 
   return (
     <Container
@@ -118,6 +122,7 @@ const Collections = () => {
       sx={{
         py: { xs: 3, md: 8 },
         px: { xs: 2, md: 3 },
+        bgcolor: theme.palette.background.default,
       }}
     >
       {/* Hero Section */}
@@ -130,6 +135,7 @@ const Collections = () => {
             textAlign: "center",
             mb: { xs: 1.5, md: 2 },
             letterSpacing: { xs: "-0.02em", md: "-0.03em" },
+            color: theme.palette.text.primary,
           }}
         >
           Our Collections
@@ -146,27 +152,31 @@ const Collections = () => {
             px: { xs: 2, md: 0 },
           }}
         >
-          Discover our carefully curated collections, each telling its own
-          unique story
+          Discover our carefully curated collections, each telling its own unique story
         </Typography>
       </Box>
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {collections.map((collection, index) => (
+        {collections.map((collection) => (
           <Card
             key={collection.id}
             sx={{
               position: "relative",
               overflow: "hidden",
-              borderRadius: { xs: "0px", md: "0px" },
+              borderRadius: { xs: "12px", md: "22px" },
               height: { xs: "110px", sm: "130px", md: "150px" },
-              borderRadius: "22px",
-              p: 0,
-              background: "linear-gradient(90deg, #111 60%, #444 100%)",
+              background:
+                mode === "dark"
+                  ? "linear-gradient(90deg, #1a1a1a 60%, #333 100%)"
+                  : "linear-gradient(90deg, #e0e0e0 60%, #bbb 100%)",
+              transition: "transform 0.3s ease",
+              "&:hover": {
+                transform: "scale(1.02)",
+              },
             }}
           >
             <CardActionArea
-              onClick={() => navigate(`/collections/${collection.id}`)}
+              onClick={() => handleCollectionClick(collection.id)}
               sx={{
                 height: "100%",
                 p: 0,
@@ -174,27 +184,25 @@ const Collections = () => {
                 zIndex: 2,
               }}
             >
-              {/* Human PNG overlay, always right */}
-              <Box
+              {/* Collection Image */}
+              <CardMedia
                 component="img"
                 src={collection.image}
-                alt="Human"
+                alt={collection.name}
                 sx={{
                   position: "absolute",
                   top: "50%",
                   right: 0,
-                  left: "auto",
                   transform: "translateY(-50%)",
-                  height: { xs: 100, sm: 170, md: 200 },
+                  height: { xs: "100%", sm: "120%", md: "140%" },
+                  width: "auto",
                   zIndex: 3,
                   opacity: 0.92,
                   pointerEvents: "none",
                   filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.25))",
-                  userSelect: "none",
-                  display: { xs: "block", md: "block" },
                 }}
               />
-              {/* Collection name, larger and left-aligned */}
+              {/* Collection Name */}
               <Box
                 sx={{
                   position: "absolute",
@@ -202,7 +210,6 @@ const Collections = () => {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  color: "#222",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "flex-start",
@@ -220,8 +227,7 @@ const Collections = () => {
                     fontSize: { xs: "1.35rem", sm: "1.7rem", md: "2.1rem" },
                     lineHeight: 1.1,
                     letterSpacing: "-0.01em",
-                    px: 1,
-                    color: "#fff",
+                    color: mode === "dark" ? "#fff" : "#222",
                     textAlign: "left",
                     maxWidth: { xs: "60%", sm: "60%", md: "60%" },
                     overflow: "hidden",

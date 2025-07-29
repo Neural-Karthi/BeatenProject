@@ -842,7 +842,7 @@ const Checkout = ({ mode = "dark" }) => {
             onClick={handleAddressSubmit} 
             color="primary"
             sx={{ 
-              color: mode === "dark" ? "#fff" : "primary.main",
+              color: mode === "dark" ? "#fff" : "#fff",
               backgroundColor: mode === "dark" ? "#FFD700" : "primary.main",
               "&:hover": {
                 backgroundColor: mode === "dark" ? "#FFC700" : "primary.dark",

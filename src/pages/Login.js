@@ -340,9 +340,6 @@ const Login = ({mode}) => {
         <Typography variant="h5" align="center" sx={{ color: mode === "dark" ? "#ffffff" : "#000000", mb: 3, fontWeight: 700 }}>
           Welcome Back
         </Typography>
-        <Typography align="center" color="text.secondary" sx={{ color: mode === "dark" ? "#ffffff" : "#000000",mb: 3 }}>
-          Enter your email or phone to continue
-        </Typography>
         <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
           <ButtonGroup variant="text" sx={{ boxShadow: "none" }}>
     <Button

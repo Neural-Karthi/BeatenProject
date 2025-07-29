@@ -32,6 +32,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  CircularProgress,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -64,8 +65,7 @@ import {
 
 const sizeOptions = ["S", "M", "L", "XL", "XXL"];
 const fitOptions = ["Slim", "Oversized", "Regular"];
-// Get all unique colors from products
-const colorOptions = []; // or compute from products if needed
+const colorOptions = [];
 
 const FALLBACK_IMAGE =
   'data:image/svg+xml;utf8,<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg"><rect fill="%23f5f5f5" width="200" height="200"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-size="20">Image</text></svg>';
@@ -80,12 +80,11 @@ const getImageUrl = (imagePath) => {
     return imagePath;
   }
   if (imagePath && !imagePath.includes("/")) {
-    return `${BASE_URL}/uploads/${imagePath}`;
+    return `${BASE_URL}/Uploads/${imagePath}`;
   }
   return imagePath;
 };
 
-// Image loading state component
 const ProductImage = ({ product, mode, onClick }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -150,20 +149,7 @@ const ProductImage = ({ product, mode, onClick }) => {
             backgroundColor: "#f5f5f5",
           }}
         >
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              border: "3px solid #e0e0e0",
-              borderTop: "3px solid #666",
-              borderRadius: "50%",
-              animation: "spin 1s linear infinite",
-              "@keyframes spin": {
-                "0%": { transform: "rotate(0deg)" },
-                "100%": { transform: "rotate(360deg)" },
-              },
-            }}
-          />
+          <CircularProgress size={40} />
         </Box>
       )}
     </Box>
@@ -180,9 +166,8 @@ const Products = ({ mode }) => {
   const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } =
     useWishlist();
 
-  // State
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     gender: [],
@@ -198,19 +183,13 @@ const Products = ({ mode }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState("grid");
   const [activeChip, setActiveChip] = useState("all");
-  // Add a loading skeleton state for demo
-  const [showLoading, setShowLoading] = useState(false);
   const [shopAllActive, setShopAllActive] = useState(false);
 
-  // Use imported categories and collections data
-
-  // Filter products by selected filters (category, etc.)
   const filteredAndSortedProducts = React.useMemo(() => {
     let filtered = products;
 
-    // Gender filter
     if (filters.gender && filters.gender.length > 0) {
       filtered = filtered.filter((p) =>
         filters.gender.some(
@@ -220,14 +199,12 @@ const Products = ({ mode }) => {
       );
     }
 
-    // Category filter
     if (filters.category && filters.category.length > 0) {
       let categoryFiltered = filtered.filter((p) =>
         filters.category.some(
           (cat) => p.category && p.category.toLowerCase() === cat.toLowerCase()
         )
       );
-      // If no products match the exact category, fall back to name match
       if (categoryFiltered.length === 0) {
         categoryFiltered = filtered.filter((p) =>
           filters.category.some(
@@ -238,24 +215,18 @@ const Products = ({ mode }) => {
       filtered = categoryFiltered;
     }
 
-    // SubCategory filter with improved logic
     if (filters.subCategory && filters.subCategory.length > 0) {
       filtered = filtered.filter((p) =>
         filters.subCategory.some((subCat) => {
-          // Check exact subCategory match
           if (
             p.subCategory &&
             p.subCategory.toLowerCase() === subCat.toLowerCase()
           ) {
             return true;
           }
-
-          // Check if subCategory is in product name
           if (p.name && p.name.toLowerCase().includes(subCat.toLowerCase())) {
             return true;
           }
-
-          // Special handling for specific subcategories
           if (subCat.toLowerCase() === "cargo pants") {
             return (
               p.category === "Bottom Wear" &&
@@ -263,7 +234,6 @@ const Products = ({ mode }) => {
                 p.name.toLowerCase().includes("cargo"))
             );
           }
-
           if (subCat.toLowerCase() === "oversized") {
             return (
               (p.category === "T-shirts" && p.subCategory === "Oversized") ||
@@ -271,20 +241,17 @@ const Products = ({ mode }) => {
               p.name.toLowerCase().includes("oversized")
             );
           }
-
           if (subCat.toLowerCase() === "co-ord sets") {
             return (
               p.category === "Co-ord Sets" ||
               p.name.toLowerCase().includes("co-ord")
             );
           }
-
           return false;
         })
       );
     }
 
-    // Collection filter
     if (filters.collectionName && filters.collectionName.length > 0) {
       filtered = filtered.filter((p) =>
         filters.collectionName.some(
@@ -295,7 +262,6 @@ const Products = ({ mode }) => {
       );
     }
 
-    // Price range filter
     if (filters.priceRange && filters.priceRange.length === 2) {
       filtered = filtered.filter((p) => {
         const price = parseFloat(p.price) || 0;
@@ -303,7 +269,6 @@ const Products = ({ mode }) => {
       });
     }
 
-    // Size filter
     if (filters.size && filters.size.length > 0) {
       filtered = filtered.filter((p) => {
         if (!p.sizes || !Array.isArray(p.sizes)) return false;
@@ -311,7 +276,6 @@ const Products = ({ mode }) => {
       });
     }
 
-    // Fit filter
     if (filters.fit && filters.fit.length > 0) {
       filtered = filtered.filter((p) =>
         filters.fit.some(
@@ -320,7 +284,6 @@ const Products = ({ mode }) => {
       );
     }
 
-    // Color filter
     if (filters.color && filters.color.length > 0) {
       filtered = filtered.filter((p) => {
         if (!p.colors || !Array.isArray(p.colors)) return false;
@@ -332,7 +295,6 @@ const Products = ({ mode }) => {
       });
     }
 
-    // Search query filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -345,7 +307,6 @@ const Products = ({ mode }) => {
       );
     }
 
-    // Sorting
     let sorted = [...filtered];
     switch (filters.sort) {
       case "price_asc":
@@ -359,12 +320,10 @@ const Products = ({ mode }) => {
         );
         break;
       case "popular":
-        // Sort by soldCount (popularity)
         sorted.sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0));
         break;
       case "newest":
       default:
-        // Sort by creation date or ID (newest first)
         sorted.sort(
           (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
         );
@@ -374,7 +333,6 @@ const Products = ({ mode }) => {
     return sorted;
   }, [products, filters, searchQuery]);
 
-  // Handlers
   const handleFilterChange = (filter, value) => {
     if (
       filter !== "category" ||
@@ -429,9 +387,7 @@ const Products = ({ mode }) => {
   const handleAddToCart = async (product) => {
     try {
       await addToCart(product._id, 1);
-      console.log("Navigating to cart...");
       navigate("/cart");
-      console.log("Navigation to cart done");
     } catch (err) {
       console.error("Error adding to cart:", err);
     }
@@ -472,12 +428,10 @@ const Products = ({ mode }) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Filter options
   const genderOptions = ["Men", "Women"];
 
   const filterBody = (
     <>
-      {/* Gender */}
       <Accordion
         defaultExpanded
         elevation={0}
@@ -492,11 +446,7 @@ const Products = ({ mode }) => {
           aria-controls="gender-panel-content"
           id="gender-panel-header"
         >
-          <Typography sx={{ 
-            fontWeight: 500, 
-            fontSize: "0.9rem",
-            color: "#000000",
-          }}>
+          <Typography sx={{ fontWeight: 500, fontSize: "0.9rem" }}>
             Gender ({filters.gender.length})
           </Typography>
         </AccordionSummary>
@@ -519,7 +469,7 @@ const Products = ({ mode }) => {
                 sx={{
                   "& .MuiFormControlLabel-label": {
                     fontSize: "0.875rem",
-                    color: "#000000",
+                    color: mode === "dark" ? "#e0e0e0" : "#333333",
                     fontWeight: 500,
                   },
                 }}
@@ -529,7 +479,6 @@ const Products = ({ mode }) => {
         </AccordionDetails>
       </Accordion>
 
-      {/* Categories */}
       <Accordion
         defaultExpanded
         elevation={0}
@@ -544,17 +493,12 @@ const Products = ({ mode }) => {
           aria-controls="category-panel-content"
           id="category-panel-header"
         >
-          <Typography sx={{ 
-            fontWeight: 500, 
-            fontSize: "0.9rem",
-            color: "#000000",
-          }}>
+          <Typography sx={{ fontWeight: 500, fontSize: "0.9rem" }}>
             Categories ({filters.category.length + filters.subCategory.length})
           </Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ pt: 0, pb: 2 }}>
           <FormGroup>
-            {/* Shop All */}
             <FormControlLabel
               control={
                 <Checkbox
@@ -576,31 +520,29 @@ const Products = ({ mode }) => {
               sx={{
                 "& .MuiFormControlLabel-label": {
                   fontSize: "0.875rem",
-                  color: "text.secondary",
+                  color: mode === "dark" ? "#e0e0e0" : "#333333",
                 },
               }}
             />
 
-            {/* MEN Section */}
             <Box sx={{ mt: 1 }}>
-                          <Typography
-              sx={{
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                color: mode === "dark" ? "#ffffff" : "#000000",
-      bgcolor: mode === "dark" ? "#1e1e1e" : "#f0f0f0", 
-                mb: 1,
-              }}
-            >
-              MEN
-            </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  color: mode === "dark" ? "#ffffff" : "#000000",
+                  mb: 1,
+                }}
+              >
+                MEN
+              </Typography>
               {Object.entries(categories["MEN"]).map(([mainCat, subCats]) => (
                 <Box key={mainCat} sx={{ ml: 2, mb: 2 }}>
                   <Typography
                     sx={{
                       fontSize: "0.875rem",
                       fontWeight: 500,
-                      color: "#000000",
+                      color: mode === "dark" ? "#e0e0e0" : "#333333",
                       mb: 0.5,
                     }}
                   >
@@ -631,7 +573,7 @@ const Products = ({ mode }) => {
                         sx={{
                           "& .MuiFormControlLabel-label": {
                             fontSize: "0.875rem",
-                            color: "#000000",
+                            color: mode === "dark" ? "#e0e0e0" : "#333333",
                             fontWeight: 500,
                           },
                         }}
@@ -642,25 +584,24 @@ const Products = ({ mode }) => {
               ))}
             </Box>
 
-            {/* WOMEN Section */}
             <Box sx={{ mt: 2 }}>
-                          <Typography
-              sx={{
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                color: "#000000",
-                mb: 1,
-              }}
-            >
-              WOMEN
-            </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  color: mode === "dark" ? "#ffffff" : "#000000",
+                  mb: 1,
+                }}
+              >
+                WOMEN
+              </Typography>
               {Object.entries(categories["WOMEN"]).map(([mainCat, subCats]) => (
                 <Box key={mainCat} sx={{ ml: 2, mb: 2 }}>
                   <Typography
                     sx={{
                       fontSize: "0.875rem",
                       fontWeight: 500,
-                      color: "#000000",
+                      color: mode === "dark" ? "#e0e0e0" : "#333333",
                       mb: 0.5,
                     }}
                   >
@@ -691,7 +632,7 @@ const Products = ({ mode }) => {
                         sx={{
                           "& .MuiFormControlLabel-label": {
                             fontSize: "0.875rem",
-                            color: "#000000",
+                            color: mode === "dark" ? "#e0e0e0" : "#333333",
                             fontWeight: 500,
                           },
                         }}
@@ -705,7 +646,6 @@ const Products = ({ mode }) => {
         </AccordionDetails>
       </Accordion>
 
-      {/* Collections */}
       <Accordion
         defaultExpanded
         elevation={0}
@@ -720,11 +660,7 @@ const Products = ({ mode }) => {
           aria-controls="collection-panel-content"
           id="collection-panel-header"
         >
-          <Typography sx={{ 
-            fontWeight: 500, 
-            fontSize: "0.9rem",
-            color: "#000000",
-          }}>
+          <Typography sx={{ fontWeight: 500, fontSize: "0.9rem" }}>
             Collections ({filters.collectionName.length})
           </Typography>
         </AccordionSummary>
@@ -751,7 +687,7 @@ const Products = ({ mode }) => {
                 sx={{
                   "& .MuiFormControlLabel-label": {
                     fontSize: "0.875rem",
-                    color: "#000000",
+                    color: mode === "dark" ? "#e0e0e0" : "#333333",
                     fontWeight: 500,
                   },
                 }}
@@ -761,7 +697,6 @@ const Products = ({ mode }) => {
         </AccordionDetails>
       </Accordion>
 
-      {/* Price Range */}
       <Accordion
         defaultExpanded
         elevation={0}
@@ -829,11 +764,7 @@ const Products = ({ mode }) => {
           aria-controls="size-panel-content"
           id="size-panel-header"
         >
-          <Typography sx={{ 
-            fontWeight: 500, 
-            fontSize: "0.9rem",
-            color: "#000000",
-          }}>
+          <Typography sx={{ fontWeight: 500, fontSize: "0.9rem" }}>
             Size ({filters.size.length})
           </Typography>
         </AccordionSummary>
@@ -858,7 +789,7 @@ const Products = ({ mode }) => {
                 sx={{
                   "& .MuiFormControlLabel-label": {
                     fontSize: "0.875rem",
-                    color: "#000000",
+                    color: mode === "dark" ? "#e0e0e0" : "#333333",
                     fontWeight: 500,
                   },
                 }}
@@ -867,6 +798,7 @@ const Products = ({ mode }) => {
           </FormGroup>
         </AccordionDetails>
       </Accordion>
+
       <Accordion
         defaultExpanded
         elevation={0}
@@ -881,11 +813,7 @@ const Products = ({ mode }) => {
           aria-controls="fit-panel-content"
           id="fit-panel-header"
         >
-          <Typography sx={{ 
-            fontWeight: 500, 
-            fontSize: "0.9rem",
-            color: "#000000",
-          }}>
+          <Typography sx={{ fontWeight: 500, fontSize: "0.9rem" }}>
             Fit ({filters.fit.length})
           </Typography>
         </AccordionSummary>
@@ -910,7 +838,7 @@ const Products = ({ mode }) => {
                 sx={{
                   "& .MuiFormControlLabel-label": {
                     fontSize: "0.875rem",
-                    color: "#000000",
+                    color: mode === "dark" ? "#e0e0e0" : "#333333",
                     fontWeight: 500,
                   },
                 }}
@@ -920,7 +848,6 @@ const Products = ({ mode }) => {
         </AccordionDetails>
       </Accordion>
 
-      {/* Color Filter */}
       <Accordion
         defaultExpanded
         elevation={0}
@@ -935,11 +862,7 @@ const Products = ({ mode }) => {
           aria-controls="color-panel-content"
           id="color-panel-header"
         >
-          <Typography sx={{ 
-            fontWeight: 500, 
-            fontSize: "0.9rem",
-            color: "#000000",
-          }}>
+          <Typography sx={{ fontWeight: 500, fontSize: "0.9rem" }}>
             Color ({filters.color.length})
           </Typography>
         </AccordionSummary>
@@ -987,7 +910,6 @@ const Products = ({ mode }) => {
     </>
   );
 
-  // Mobile sticky header
   const mobileHeader = (
     <Box
       sx={{
@@ -1004,25 +926,21 @@ const Products = ({ mode }) => {
         boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
       }}
     >
-      {/* Grid view icon on left */}
       <IconButton
         onClick={() => setViewMode("grid")}
         color={viewMode === "grid" ? "primary" : "default"}
       >
         <ViewModuleIcon />
       </IconButton>
-      {/* Search icon in center */}
       <IconButton>
         <SearchIcon />
       </IconButton>
-      {/* Filter icon on right */}
       <IconButton onClick={() => setDrawerOpen(true)}>
         <FilterIcon />
       </IconButton>
     </Box>
   );
 
-  // For mobile chips, use only subcategories for category chips (not 'MEN'/'WOMEN')
   const subCategoryOptions = [
     ...Object.values(categories["MEN"] || {}).flat(),
     ...Object.values(categories["WOMEN"] || {}).flat(),
@@ -1030,21 +948,16 @@ const Products = ({ mode }) => {
 
   const chipSet = new Set();
   const uniqueChips = [
-    // Gender chips
     ...genderOptions.map((option) => ({
       label: option,
       filterKey: "gender",
       value: option,
     })),
-    // Remove main category chips (MEN, WOMEN)
-    // CollectionName chips
     ...collections.map((collection) => ({
       label: collection,
       filterKey: "collectionName",
       value: collection,
     })),
-    // Remove size chips
-    // Fit chips
     ...fitOptions.map((fit) => ({
       label: fit,
       filterKey: "fit",
@@ -1063,7 +976,7 @@ const Products = ({ mode }) => {
         bgcolor: "background.paper",
         borderBottom: "none",
         position: "sticky",
-        top: 44, // changed from 48 to 56 to match header height
+        top: 44,
         left: 0,
         width: "100%",
         zIndex: 1200,
@@ -1072,7 +985,6 @@ const Products = ({ mode }) => {
         boxShadow: "none",
         mb: 0,
         pb: 0,
-        // No margin or border at the top
         "&::-webkit-scrollbar": {
           display: "none",
         },
@@ -1088,10 +1000,8 @@ const Products = ({ mode }) => {
           onClick={() => {
             const isActive = filters[chip.filterKey].includes(chip.value);
             if (isActive) {
-              // Deselect all filters
               handleFilterChange(chip.filterKey, []);
             } else {
-              // Clear all filters, then set only this chip as active
               setFilters({
                 gender: chip.filterKey === "gender" ? [chip.value] : [],
                 category: [],
@@ -1120,15 +1030,15 @@ const Products = ({ mode }) => {
             borderColor: filters[chip.filterKey].includes(chip.value)
               ? "primary.main"
               : "rgba(0, 0, 0, 0.12)",
-            mx: 0, // Remove horizontal margin
-            px: 0, // Remove horizontal padding
+            mx: 0,
+            px: 0,
             "&:hover": {
               bgcolor: filters[chip.filterKey].includes(chip.value)
                 ? "primary.dark"
                 : "rgba(0, 0, 0, 0.04)",
             },
             "& .MuiChip-label": {
-              px: 1.2, // Reduce label padding
+              px: 1.2,
               fontWeight: 500,
               fontSize: "0.875rem",
             },
@@ -1138,9 +1048,8 @@ const Products = ({ mode }) => {
     </Box>
   );
 
-  // Add a function to fetch products
   const fetchProducts = async () => {
-    setShowLoading(true);
+    setLoading(true);
     try {
       const response = await axios.get(buildApiUrl(API_ENDPOINTS.PRODUCTS));
       setProducts(response.data.data || []);
@@ -1148,22 +1057,20 @@ const Products = ({ mode }) => {
       const error = handleApiError(err);
       setError(error.message || "Failed to load products");
     } finally {
-      setShowLoading(false);
+      setLoading(false);
     }
   };
 
-  // Update useEffect to use fetchProducts
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  // Add a floating filter button for mobile view
   const mobileFilterFab = (
     <Box
       sx={{
         display: { xs: "flex", md: "none" },
         position: "fixed",
-        bottom: 80, // Move up to avoid covering bottom nav
+        bottom: 80,
         right: 20,
         zIndex: 1300,
         pointerEvents: "auto",
@@ -1176,11 +1083,11 @@ const Products = ({ mode }) => {
           bgcolor: "primary.main",
           color: "white",
           boxShadow: 4,
-          width: 44, // Decrease size
-          height: 44, // Decrease size
+          width: 44,
+          height: 44,
           borderRadius: "50%",
           "&:hover": { bgcolor: "primary.dark" },
-          fontSize: 24, // Decrease icon size
+          fontSize: 24,
         }}
         onClick={() => setDrawerOpen(true)}
         aria-label="Open filters"
@@ -1190,7 +1097,6 @@ const Products = ({ mode }) => {
     </Box>
   );
 
-  // Set collectionName and category filter from URL on mount
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const collectionNameParam = params.get("collectionName");
@@ -1211,70 +1117,66 @@ const Products = ({ mode }) => {
         color: mode === "dark" ? "#fff" : "inherit",
         minHeight: "100vh",
         transition: "background 0.3s, color 0.3s",
-     
         pb: { xs: 0, md: 4 },
         mb: 0,
       }}
     >
-      {/* Edge-to-edge Search Bar */}
       <Box
-  sx={{
-    width: "100vw",
-    position: "relative",
-    left: "50%",
-    right: "50%",
-    transform: "translateX(-50%)",
-    bgcolor: mode === "dark" ? "#000" : "#fff",
-    zIndex: 10,
-    mb: 2,
-  }}
->
-  <TextField
-    fullWidth
-    placeholder="Search products..."
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-    InputProps={{
-      startAdornment: (
-        <InputAdornment position="start">
-          <SearchIcon sx={{ color: mode === "dark" ? "#fff" : "#000" }} />
-        </InputAdornment>
-      ),
-      endAdornment: searchQuery && (
-        <InputAdornment position="end">
-          <IconButton size="small" onClick={() => setSearchQuery("")}>
-            <CloseIcon sx={{ color: mode === "dark" ? "#fff" : "#000" }} />
-          </IconButton>
-        </InputAdornment>
-      ),
-    }}
-    sx={{
-      width: "100%",
-      "& .MuiOutlinedInput-root": {
-        color: mode === "dark" ? "#fff" : "#000", // text color
-        "& fieldset": {
-          borderColor: mode === "dark" ? "#555" : "#ccc", // border color
-        },
-        "&:hover fieldset": {
-          borderColor: mode === "dark" ? "#888" : "#000",
-        },
-        "&.Mui-focused fieldset": {
-          borderColor: mode === "dark" ? "#fff" : "#000",
-        },
-      },
-      "& .MuiInputBase-input::placeholder": {
-        color: mode === "dark" ? "#aaa" : "#666", // placeholder color
-        opacity: 1,
-      },
-    }}
-  />
-</Box>
+        sx={{
+          width: "100vw",
+          position: "relative",
+          left: "50%",
+          right: "50%",
+          transform: "translateX(-50%)",
+          bgcolor: mode === "dark" ? "#000" : "#fff",
+          zIndex: 10,
+          mb: 2,
+        }}
+      >
+        <TextField
+          fullWidth
+          placeholder="Search products..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: mode === "dark" ? "#fff" : "#000" }} />
+              </InputAdornment>
+            ),
+            endAdornment: searchQuery && (
+              <InputAdornment position="end">
+                <IconButton size="small" onClick={() => setSearchQuery("")}>
+                  <CloseIcon sx={{ color: mode === "dark" ? "#fff" : "#000" }} />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            width: "100%",
+            "& .MuiOutlinedInput-root": {
+              color: mode === "dark" ? "#fff" : "#000",
+              "& fieldset": {
+                borderColor: mode === "dark" ? "#555" : "#ccc",
+              },
+              "&:hover fieldset": {
+                borderColor: mode === "dark" ? "#888" : "#000",
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: mode === "dark" ? "#fff" : "#000",
+              },
+            },
+            "& .MuiInputBase-input::placeholder": {
+              color: mode === "dark" ? "#aaa" : "#666",
+              opacity: 1,
+            },
+          }}
+        />
+      </Box>
 
       <Container maxWidth="xl" disableGutters={isMobile} sx={{ pb: { xs: 0, md: 4 }, mb: 0 }}>
-        {/* Mobile custom header and chips */}
         {isMobile && (
           <>
-            {/* Mobile Product Count */}
             <Box
               sx={{
                 display: { xs: "flex", md: "none" },
@@ -1283,14 +1185,13 @@ const Products = ({ mode }) => {
                 py: 0,
                 px: 10,
                 borderBottom: "1px solid #eee",
-                
                 mt: 0,
                 mb: 0,
               }}
             >
               <Typography
                 variant="body2"
-                sx={{ color: mode === "dark" ? "#fff" : "#000" , fontWeight: 500 }}
+                sx={{ color: mode === "dark" ? "#fff" : "#000", fontWeight: 500 }}
               >
                 {filteredAndSortedProducts.length} Products
               </Typography>
@@ -1298,35 +1199,31 @@ const Products = ({ mode }) => {
             {mobileChips}
           </>
         )}
-        <Grid container  spacing={{ xs: 0, md: 3 }} sx={{ mt: 0, pt: 0 }}>
-          {/* Restore desktop sidebar filter */}
-         <Grid
-  item
-  xs={12}
-  md={2.5}
-  sx={{ display: { xs: "none", md: "block" } }}
->
-  <Paper
-    sx={{
-      p: 2,
-      display: { xs: "none", md: "block" },
-      position: "sticky",
-      top: "100px",
-      maxHeight: "calc(100vh - 100px)",
-      overflowY: "auto",
-      bgcolor: mode === "dark" ? "#121212" : "#f9f9f9",
-      color: mode === "dark" ? "#fff" : "#000",
-      border: mode === "dark" ? "1px solid #333" : "1px solid #ddd",
-    }}
-  >
-    {filterBody}
-  </Paper>
-</Grid>
+        <Grid container spacing={{ xs: 0, md: 3 }} sx={{ mt: 0, pt: 0 }}>
+          <Grid
+            item
+            xs={12}
+            md={2.5}
+            sx={{ display: { xs: "none", md: "block" } }}
+          >
+            <Paper
+              sx={{
+                p: 2,
+                display: { xs: "none", md: "block" },
+                position: "sticky",
+                top: "100px",
+                maxHeight: "calc(100vh - 100px)",
+                overflowY: "auto",
+                bgcolor: mode === "dark" ? "#121212" : "#f9f9f9",
+                color: mode === "dark" ? "#fff" : "#000",
+                border: mode === "dark" ? "1px solid #333" : "1px solid #ddd",
+              }}
+            >
+              {filterBody}
+            </Paper>
+          </Grid>
 
-
-          {/* Products Grid */}
           <Grid item xs={12} md={9.5} sx={{ pt: 0, mt: 0 }}>
-            {/* Desktop Sort and View Controls */}
             <Box
               sx={{
                 display: { xs: "none", md: "flex" },
@@ -1345,7 +1242,7 @@ const Products = ({ mode }) => {
                     value={filters.sort}
                     onChange={(e) => handleFilterChange("sort", e.target.value)}
                     displayEmpty
-                    sx={{ 
+                    sx={{
                       fontSize: "0.875rem",
                       "& .MuiSelect-select": {
                         color: mode === "dark" ? "#fff" : "inherit",
@@ -1378,7 +1275,7 @@ const Products = ({ mode }) => {
                     size="small"
                     onClick={() => setViewMode("grid")}
                     color={viewMode === "grid" ? "primary" : "default"}
-                    sx={{ 
+                    sx={{
                       borderRadius: 0,
                       color: mode === "dark" ? "#fff" : "inherit",
                       "&:hover": {
@@ -1392,7 +1289,7 @@ const Products = ({ mode }) => {
                     size="small"
                     onClick={() => setViewMode("list")}
                     color={viewMode === "list" ? "primary" : "default"}
-                    sx={{ 
+                    sx={{
                       borderRadius: 0,
                       color: mode === "dark" ? "#fff" : "inherit",
                       "&:hover": {
@@ -1406,273 +1303,262 @@ const Products = ({ mode }) => {
               </Box>
             </Box>
 
-            {/* Products Grid/List */}
-            <Grid container spacing={0}>
-              {showLoading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <Grid item xs={6} sm={6} md={3} key={i}>
-                    <Card
-                      sx={{
-                        borderRadius: 0,
-                        boxShadow: 2,
-                        minHeight: 320,
-                        p: 0,
-                      }}
-                    >
-                      <Skeleton
-                        variant="rectangular"
-                        sx={{ borderRadius: 0, height: { xs: 320, md: 480 } }}
-                      />
-                      <Box sx={{ p: 1 }}>
-                        <Skeleton width="80%" />
-                        <Skeleton width="60%" />
-                        <Skeleton width="40%" />
-                      </Box>
-                    </Card>
+            {loading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
+                <CircularProgress size={60} />
+              </Box>
+            ) : error ? (
+              <Box sx={{ textAlign: "center", py: 4 }}>
+                <Typography variant="h6" color="error">
+                  {error}
+                </Typography>
+              </Box>
+            ) : (
+              <Grid container spacing={2}>
+                {filteredAndSortedProducts.length === 0 ? (
+                  <Grid item xs={12}>
+                    <Box sx={{ textAlign: "center", py: 4 }}>
+                      <Typography variant="h6" color="text.secondary">
+                        No products found matching your criteria
+                      </Typography>
+                    </Box>
                   </Grid>
-                ))
-              ) : filteredAndSortedProducts.length === 0 ? (
-                <Grid item xs={12}>
-                  <Box sx={{ textAlign: "center", py: 4 }}>
-                    <Typography variant="h6" color="text.secondary">
-                      No products found matching your criteria
-                    </Typography>
-                  </Box>
-                </Grid>
-              ) : (
-                filteredAndSortedProducts.map((product, index) => (
-                  <Grid
-                    item
-                    key={product._id}
-                    xs={6}
-                    sm={6}
-                    md={viewMode === "grid" ? 3 : 12}
-                  >
-                    <Fade in timeout={400 + index * 60}>
-                      <Card
-                        elevation={0}
-                        sx={{
-                          height: "100%",
-                          display: "flex",
-                          flexDirection: viewMode === "grid" ? "column" : "row",
-                          cursor: "pointer",
-                          transition: "all 0.3s ease",
-                          position: "relative",
-                          overflow: "hidden",
-                          borderRadius: 0,
-                          
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-                          minHeight: 320,
-                         bgcolor: mode === "dark" ? "#000" : "#fff",
-
-                          "&:hover": {
-                            transform: "translateY(-2px)",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                            "& .MuiCardMedia-root": {
-                              transform: "scale(1.03)",
-                            },
-                          },
-                        }}
-                        onClick={() => handleProductClick(product._id)}
-                      >
-                        <CardActionArea
-                          component="div"
+                ) : (
+                  filteredAndSortedProducts.map((product, index) => (
+                    <Grid
+                      item
+                      key={product._id}
+                      xs={6}
+                      sm={6}
+                      md={viewMode === "grid" ? 3 : 12}
+                    >
+                      <Fade in timeout={400 + index * 60}>
+                        <Card
+                          elevation={0}
                           sx={{
+                            height: "100%",
                             display: "flex",
-                            flexDirection:
-                              viewMode === "grid" ? "column" : "row",
-                            alignItems: "stretch",
+                            flexDirection: viewMode === "grid" ? "column" : "row",
+                            cursor: "pointer",
+                            transition: "all 0.3s ease",
+                            position: "relative",
+                            overflow: "hidden",
+                            borderRadius: 0,
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                            bgcolor: mode === "dark" ? "#000" : "#fff",
+                            "&:hover": {
+                              transform: "translateY(-2px)",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                              "& .MuiCardMedia-root": {
+                                transform: "scale(1.03)",
+                              },
+                            },
+                            ...(viewMode === "list" && {
+                              alignItems: "center",
+                              minHeight: 200,
+                            }),
                           }}
+                          onClick={() => handleProductClick(product._id)}
                         >
-                          <Box
+                          <CardActionArea
+                            component="div"
                             sx={{
-                              position: "relative",
-                              width: "100%",
-                              overflow: "hidden",
-                            }}
-                          >
-                            <ProductImage
-                              product={product}
-                              mode={mode}
-                              onClick={() => handleProductClick(product._id)}
-                            />
-                            {/* Wishlist Button */}
-                            <Fade in>
-                              <IconButton
-                                aria-label="add to wishlist"
-                                size="small"
-                                sx={{
-                                  position: "absolute",
-                                  top: 8,
-                                  right: 8,
-                                  bgcolor: "rgba(255, 255, 255, 0.95)",
-                                  
-                                  borderRadius: "50%",
-                                  boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-                                  width: 30,
-                                  height: 30,
-                                  transition: "all 0.2s ease",
-                                  "&:hover": {
-                                    bgcolor: "#fff",
-                                    transform: "scale(1.05)",
-                                    boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
-                                  },
-                                  zIndex: 1,
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleWishlistToggle(product._id);
-                                }}
-                              >
-                                {isInWishlist(product._id) ? (
-                                  <FavoriteIcon
-                                    sx={{
-                                      color: "#ff1744",
-                                      fontSize: 18,
-                                      transition: "all 0.2s ease",
-                                    }}
-                                  />
-                                ) : (
-                                  <FavoriteBorderIcon
-                                    sx={{
-                                      color: "rgba(0, 0, 0, 0.4)",
-                                      fontSize: 18,
-                                      transition: "all 0.2s ease",
-                                    }}
-                                  />
-                                )}
-                              </IconButton>
-                            </Fade>
-                          </Box>
-                          <Box
-                            sx={{
-                              flex: 1,
-                              p: 1.2,
                               display: "flex",
-                              flexDirection: "column",
-                              justifyContent: "center",
-                              minHeight: 80,
+                              flexDirection:
+                                viewMode === "grid" ? "column" : "row",
+                              alignItems: "stretch",
+                              flex: 1,
                             }}
                           >
-                            <Typography
-                              gutterBottom
-                              variant="subtitle1"
-                              component="div"
-                              sx={{
-                                fontWeight: 500,
-                                fontSize: "0.95rem",
-                                mb: 0.5,
-                                lineHeight: 1.2,
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                color: mode === "dark" ? "#ffffff" : "#000000",
-                                transition: "color 0.2s ease",
-                                "&:hover": {
-                                  color: "primary.main",
-                                },
-                              }}
-                            >
-                              {product.name}
-                            </Typography>
                             <Box
                               sx={{
+                                position: "relative",
+                                width: viewMode === "grid" ? "100%" : "30%",
+                                overflow: "hidden",
+                                minWidth: viewMode === "list" ? 200 : "auto",
+                              }}
+                            >
+                              <ProductImage
+                                product={product}
+                                mode={mode}
+                                onClick={() => handleProductClick(product._id)}
+                              />
+                              <Fade in>
+                                <IconButton
+                                  aria-label="add to wishlist"
+                                  size="small"
+                                  sx={{
+                                    position: "absolute",
+                                    top: 8,
+                                    right: 8,
+                                    bgcolor: "rgba(255, 255, 255, 0.95)",
+                                    borderRadius: "50%",
+                                    border: "1px solid rgba(0,0,0,0.1)",
+                                    boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+                                    width: 30,
+                                    height: 30,
+                                    transition: "all 0.2s ease",
+                                    "&:hover": {
+                                      bgcolor: "#fff",
+                                      transform: "scale(1.05)",
+                                      boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+                                    },
+                                    zIndex: 1,
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleWishlistToggle(product._id);
+                                  }}
+                                >
+                                  {isInWishlist(product._id) ? (
+                                    <FavoriteIcon
+                                      sx={{
+                                        color: "#ff1744",
+                                        fontSize: 18,
+                                        transition: "all 0.2s ease",
+                                      }}
+                                    />
+                                  ) : (
+                                    <FavoriteBorderIcon
+                                      sx={{
+                                        color: "rgba(0, 0, 0, 0.4)",
+                                        fontSize: 18,
+                                        transition: "all 0.2s ease",
+                                      }}
+                                    />
+                                  )}
+                                </IconButton>
+                              </Fade>
+                            </Box>
+                            <Box
+                              sx={{
+                                flex: 1,
+                                p: viewMode === "grid" ? 1.2 : 2,
                                 display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                mb: 0.5,
+                                flexDirection: "column",
+                                justifyContent: viewMode === "grid" ? "space-between" : "center",
+                                minHeight: viewMode === "grid" ? 80 : "auto",
+                                width: viewMode === "list" ? "70%" : "100%",
                               }}
                             >
                               <Typography
-                                variant="body2"
-                                color="text.primary"
+                                gutterBottom
+                                variant="subtitle1"
+                                component="div"
                                 sx={{
-                                  fontWeight: 600,
-                                  fontSize: "1rem",
+                                  fontWeight: 500,
+                                  fontSize: "0.95rem",
+                                  mb: 0.5,
+                                  lineHeight: 1.2,
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
                                   color: mode === "dark" ? "#ffffff" : "#000000",
+                                  transition: "color 0.2s ease",
+                                  "&:hover": {
+                                    color: "primary.main",
+                                  },
                                 }}
                               >
-                                {formatPrice(product.price)}
+                                {product.name}
                               </Typography>
-                              {product.discount && (
-                                <Typography
-                                  variant="body2"
-                                  color="error"
-                                  sx={{
-                                    fontWeight: 500,
-                                    ml: 1,
-                                    fontSize: "0.9rem",
-                                  }}
-                                >
-                                  {product.discount}% OFF
-                                </Typography>
-                              )}
-                            </Box>
-                            {/* Color swatches */}
-                            {product.colors && product.colors.length > 0 && (
                               <Box
                                 sx={{
                                   display: "flex",
-                                  gap: 0.5,
-                                  mt: 0.5,
+                                  alignItems: "center",
+                                  gap: 1,
+                                  mb: viewMode === "grid" ? 0.5 : 1,
                                 }}
                               >
-                                {product.colors.slice(0, 3).map((color) => (
-                                  <Tooltip key={color} title={color} arrow>
-                                    <Box
-                                      sx={{
-                                        width: 14,
-                                        height: 14,
-                                        borderRadius: "50%",
-                                        bgcolor: color
-                                          .toLowerCase()
-                                          .replace(" ", ""),
-                                        border: "1px solid #ddd",
-                                        mr: 0.5,
-                                        transition: "all 0.2s ease",
-                                        "&:hover": {
-                                          transform: "scale(1.1)",
-                                          borderColor: "#999",
-                                        },
-                                      }}
-                                    />
-                                  </Tooltip>
-                                ))}
-                                {product.colors.length > 3 && (
+                                <Typography
+                                  variant="body2"
+                                  color="text.primary"
+                                  sx={{
+                                    fontWeight: 600,
+                                    fontSize: "1rem",
+                                    color: mode === "dark" ? "#ffffff" : "#000000",
+                                  }}
+                                >
+                                  {formatPrice(product.price)}
+                                </Typography>
+                                {product.discount && (
                                   <Typography
-                                    variant="caption"
+                                    variant="body2"
+                                    color="error"
                                     sx={{
-                                      ml: 0.5,
-                                      color: "text.secondary",
-                                      fontSize: "0.75rem",
+                                      fontWeight: 500,
+                                      ml: 1,
+                                      fontSize: "0.9rem",
                                     }}
                                   >
-                                    +{product.colors.length - 3}
+                                    {product.discount}% OFF
                                   </Typography>
                                 )}
                               </Box>
-                            )}
-                          </Box>
-                        </CardActionArea>
-                      </Card>
-                    </Fade>
-                  </Grid>
-                ))
-              )}
-            </Grid>
+                              {product.colors && product.colors.length > 0 && (
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    gap: 0.5,
+                                    mt: viewMode === "grid" ? 0.5 : 1,
+                                  }}
+                                >
+                                  {product.colors.slice(0, 3).map((color) => (
+                                    <Tooltip key={color} title={color} arrow>
+                                      <Box
+                                        sx={{
+                                          width: 14,
+                                          height: 14,
+                                          borderRadius: "50%",
+                                          bgcolor: color
+                                            .toLowerCase()
+                                            .replace(" ", ""),
+                                          border: "1px solid #ddd",
+                                          mr: 0.5,
+                                          transition: "all 0.2s ease",
+                                          "&:hover": {
+                                            transform: "scale(1.1)",
+                                            borderColor: "#999",
+                                          },
+                                        }}
+                                      />
+                                    </Tooltip>
+                                  ))}
+                                  {product.colors.length > 3 && (
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        ml: 0.5,
+                                        color: "text.secondary",
+                                        fontSize: "0.75rem",
+                                      }}
+                                    >
+                                      +{product.colors.length - 3}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              )}
+                            </Box>
+                          </CardActionArea>
+                        </Card>
+                      </Fade>
+                    </Grid>
+                  ))
+                )}
+              </Grid>
+            )}
           </Grid>
         </Grid>
 
-        {/* Mobile Sort Popup Dialog */}
         <Dialog
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           PaperProps={{
             sx: {
               position: "fixed",
-              bottom: 100, // Position above the bottom navigation
+              bottom: 100,
               right: 20,
               margin: 0,
               width: 280,
@@ -1701,7 +1587,6 @@ const Products = ({ mode }) => {
           }}
         >
           <Box sx={{ p: 2 }}>
-            {/* Dialog Header */}
             <Box
               sx={{
                 display: "flex",
@@ -1712,16 +1597,12 @@ const Products = ({ mode }) => {
             >
               <Typography
                 variant="h6"
-                sx={{ 
-                  fontSize: "1rem", 
-                  fontWeight: 600,
-                  color: mode === "dark" ? "#fff" : "#000",
-                }}
+                sx={{ fontSize: "1rem", fontWeight: 600, color: mode === "dark" ? "#fff" : "#000" }}
               >
                 Sort
               </Typography>
-              <IconButton 
-                onClick={() => setDrawerOpen(false)} 
+              <IconButton
+                onClick={() => setDrawerOpen(false)}
                 size="small"
                 sx={{
                   color: mode === "dark" ? "#fff" : "#000",
@@ -1734,7 +1615,6 @@ const Products = ({ mode }) => {
               </IconButton>
             </Box>
 
-            {/* Sort Dropdown */}
             <Box sx={{ mb: 2 }}>
               <Typography
                 variant="body2"
@@ -1752,7 +1632,7 @@ const Products = ({ mode }) => {
                   value={filters.sort}
                   onChange={(e) => {
                     handleFilterChange("sort", e.target.value);
-                    setDrawerOpen(false); // Close dialog after selection
+                    setDrawerOpen(false);
                   }}
                   displayEmpty
                   sx={{
@@ -1809,8 +1689,6 @@ const Products = ({ mode }) => {
                 </Select>
               </FormControl>
             </Box>
-
-
           </Box>
         </Dialog>
       </Container>

@@ -26,7 +26,6 @@ import { useCart } from "../context/CartContext";
 import { formatPrice } from "../utils/format";
 import axios from "axios";
 import { API_ENDPOINTS, buildApiUrl, handleApiError } from "../utils/api";
-// Remove: import { mockCoupons, validateCoupon } from "../data/mockData";
 
 // Dynamically load Razorpay script
 const loadRazorpayScript = () => {
@@ -45,7 +44,7 @@ const Payment = ({ mode = "dark" }) => {
   const { cart, clearCart } = useCart();
   const location = useLocation();
   const selectedAddress = location.state?.selectedAddress;
-  // Move subtotal calculation to the top
+  // Calculate subtotal
   const subtotal = cart.reduce(
     (total, item) => total + item.product.price * item.quantity,
     0
@@ -86,7 +85,6 @@ const Payment = ({ mode = "dark" }) => {
   };
 
   const cardColors = getCardColors();
-  // Remove autoFlatDiscount state
 
   useEffect(() => {
     // Fetch public coupons from backend
@@ -204,42 +202,6 @@ const Payment = ({ mode = "dark" }) => {
     }
   };
 
-  // Razorpay handler (new approach)
-  // const handleRazorpay = async () => {
-  //   const script = document.createElement("script");
-  //   script.src = "https://checkout.razorpay.com/v1/checkout.js";
-  //   script.async = true;
-  //   document.body.appendChild(script);
-  //   script.onload = async () => {
-  //     const options = {
-  //       key:
-  //         process.env.REACT_APP_RAZORPAY_KEY_TEST || "rzp_test_ftcTPKoHNzJjbG", // Razorpay test key
-  //       amount: Math.round(total * 100),
-  //       currency: "INR",
-  //       name: "BEATEN",
-  //       description: `Order Payment (Card, UPI, PhonePe, etc.)`,
-  //       handler: async function (response) {
-  //         // Place order after successful payment
-  //         const success = await createOrder("razorpay");
-  //         if (success) {
-  //           setOrderPlaced(true);
-  //           setLoading(false);
-  //           clearCart();
-  //         }
-  //       },
-  //       prefill: {
-  //         name: user?.name || "User",
-  //         email: user?.email || "user@example.com",
-  //         contact: user?.phone || "9876543210",
-  //       },
-  //       theme: { color: "#111" },
-  //     };
-  //     // @ts-ignore
-  //     const rzp = new window.Razorpay(options);
-  //     rzp.open();
-  //   };
-  // };
-
   const handleRazorpay = async () => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
@@ -279,7 +241,6 @@ const Payment = ({ mode = "dark" }) => {
   // Helper to place order in backend
   const createOrder = async (paymentType) => {
     try {
-      const finalTotal = paymentMethod === "cod" ? total + 50 : total;
       const orderData = {
         orderItems: cart.map((item) => ({
           product: item.product._id,
@@ -295,7 +256,7 @@ const Payment = ({ mode = "dark" }) => {
           method: paymentType,
           status: paymentType === "cod" ? "Pending" : "Paid",
         },
-        totalPrice: finalTotal,
+        totalPrice: total,
       };
       const token = localStorage.getItem("token");
       const response = await axios.post(
@@ -386,20 +347,6 @@ const Payment = ({ mode = "dark" }) => {
         minHeight: "100vh",
       }}
     >
-      {/* Remove autoFlatDiscount from UI */}
-      {/* Flat Discount Message - Always at the top if present */}
-      {/* <Alert severity="info" sx={{ mb: 3 }}>
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          Flat discount applied! You saved <b>₹{autoFlatDiscount.discount}</b>.
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Previous total: <span style={{ textDecoration: 'line-through', color: '#888' }}>{formatPrice(subtotal - discount + shipping)}</span> &nbsp; | &nbsp;
-          New total: <b>{formatPrice(subtotal - discount - Math.min(subtotal, autoFlatDiscount.discount) + shipping + (paymentMethod === 'cod' ? 50 : 0))}</b>
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Coupon code: {autoFlatDiscount.code}
-        </Typography>
-      </Alert> */}
       <Grid container spacing={4}>
         <Grid item xs={12} md={7}>
           <Paper sx={{ 
@@ -515,7 +462,7 @@ const Payment = ({ mode = "dark" }) => {
             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
               <IconButton
                 color="primary"
-                  sx={{ mr: 1, color: mode === "dark" ? "#FFD700" : "primary.main" }}
+                sx={{ mr: 1, color: mode === "dark" ? "#FFD700" : "primary.main" }}
                 onClick={handleViewOffers}
               >
                 <RemoveRedEyeIcon />
@@ -523,11 +470,11 @@ const Payment = ({ mode = "dark" }) => {
               <Button
                 variant="text"
                 color="primary"
-                  sx={{ 
-                    textTransform: "none", 
-                    fontWeight: 600,
-                    color: mode === "dark" ? "#FFD700" : "primary.main"
-                  }}
+                sx={{ 
+                  textTransform: "none", 
+                  fontWeight: 600,
+                  color: mode === "dark" ? "#FFD700" : "primary.main"
+                }}
                 onClick={handleViewOffers}
               >
                 View Available Offers
@@ -665,13 +612,6 @@ const Payment = ({ mode = "dark" }) => {
                         >
                           • Pay with cash or card on delivery
                         </Typography>
-                        <Typography
-                          variant="caption"
-                          color="warning.main"
-                          display="block"
-                        >
-                          • Additional ₹50 COD charge applies
-                        </Typography>
                       </Box>
                     }
                   />
@@ -703,9 +643,7 @@ const Payment = ({ mode = "dark" }) => {
               {loading ? (
                 <CircularProgress size={24} />
               ) : (
-                `Place Order - ${formatPrice(
-                  paymentMethod === "cod" ? total + 50 : total
-                )}`
+                `Place Order ${formatPrice(total)}`
               )}
             </Button>
           </Paper>
@@ -745,7 +683,7 @@ const Payment = ({ mode = "dark" }) => {
               <Box
                 sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
               >
-                <Typography>Premium Discount</Typography>
+                <Typography sx={{ color: cardColors.text }}>Premium Discount</Typography>
                 <Typography color="success.main">
                   -{formatPrice(discount)}
                 </Typography>
@@ -770,7 +708,7 @@ const Payment = ({ mode = "dark" }) => {
               <Box
                 sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
               >
-                <Typography>Coupon Discount</Typography>
+                <Typography sx={{ color: cardColors.text }}>Coupon Discount</Typography>
                 <Typography color="success.main">
                   -{formatPrice(couponDiscount)}
                 </Typography>
@@ -782,14 +720,6 @@ const Payment = ({ mode = "dark" }) => {
               <Typography sx={{ color: cardColors.text }}>Shipping</Typography>
               <Typography sx={{ color: cardColors.text }}>{formatPrice(shipping)}</Typography>
             </Box>
-            {paymentMethod === "cod" && (
-              <Box
-                sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
-              >
-                <Typography sx={{ color: cardColors.text }}>COD Charge</Typography>
-                <Typography color="warning.main">+₹50</Typography>
-              </Box>
-            )}
             <Divider sx={{ my: 2 }} />
             {appliedCoupon ? (
               <Box sx={{ display: "flex", flexDirection: "column", mb: 2 }}>
@@ -812,13 +742,7 @@ const Payment = ({ mode = "dark" }) => {
                     {formatPrice(subtotal - discount + shipping)}
                   </Typography>
                   <Typography variant="h6" color="primary" fontWeight={700}>
-                    {formatPrice(
-                      subtotal -
-                        discount -
-                        couponDiscount +
-                        shipping +
-                        (paymentMethod === "cod" ? 50 : 0)
-                    )}
+                    {formatPrice(subtotal - discount - couponDiscount + shipping)}
                   </Typography>
                 </Box>
                 <Box
@@ -829,7 +753,7 @@ const Payment = ({ mode = "dark" }) => {
                   }}
                 >
                   <Typography variant="caption" color="success.main">
-                    Coupon discount: -{formatPrice(couponDiscount)}
+                    Coupon discount: {formatPrice(couponDiscount)}
                   </Typography>
                 </Box>
               </Box>
@@ -841,7 +765,7 @@ const Payment = ({ mode = "dark" }) => {
                   Total
                 </Typography>
                 <Typography variant="h6" fontWeight={700} sx={{ color: mode === "dark" ? "#FFD700" : "primary.main" }}>
-                  {formatPrice(paymentMethod === "cod" ? total + 50 : total)}
+                  {formatPrice(total)}
                 </Typography>
               </Box>
             )}

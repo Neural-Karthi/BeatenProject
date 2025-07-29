@@ -24,6 +24,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Tooltip,
 } from "@mui/material";
 import { useParams, Link as RouterLink, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
@@ -31,23 +32,17 @@ import { useAuth } from "../context/AuthContext";
 import {
   Add as AddIcon,
   Remove as RemoveIcon,
-  Star as StarIcon,
-  NavigateNext as NavigateNextIcon,
   FavoriteBorder as FavoriteBorderIcon,
   LocalShippingOutlined as ShippingIcon,
   CheckCircleOutline as CheckIcon,
   ExpandMore as ExpandMoreIcon,
+  ArrowBack as ArrowBackIcon,
+  ArrowForward as ArrowForwardIcon,
 } from "@mui/icons-material";
 import { useWishlist } from "../context/WishlistContext";
 import { API_ENDPOINTS, buildApiUrl, handleApiError } from "../utils/api";
 import axios from "axios";
-
-import { getProductById } from "../data/mockData";
-import {
-  fetchReviewsForProduct,
-  postReview,
-  deleteReview,
-} from "../api/reviewsAPI";
+import { fetchReviewsForProduct, postReview, deleteReview } from "../api/reviewsAPI";
 
 const matteColors = {
   900: "#1a1a1a",
@@ -57,11 +52,8 @@ const matteColors = {
   100: "#f5f5f5",
 };
 
-// Helper function to construct image URL
 const FALLBACK_IMAGE =
   'data:image/svg+xml;utf8,<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg"><rect fill="%23f5f5f5" width="200" height="200"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23999" font-size="20">Image</text></svg>';
-
-// Removed BASE_URL as it's now handled by the centralized API
 
 const getImageUrl = (imagePath) => {
   if (!imagePath) return FALLBACK_IMAGE;
@@ -72,7 +64,7 @@ const getImageUrl = (imagePath) => {
     return imagePath;
   }
   if (imagePath && !imagePath.includes("/")) {
-    return `${buildApiUrl("")}/uploads/${imagePath}`;
+    return `${buildApiUrl("")}/Uploads/${imagePath}`;
   }
   return imagePath;
 };
@@ -118,7 +110,6 @@ const ProductDetail = ({ mode }) => {
   };
 
   const handlePincodeCheck = () => {
-    // Dummy delivery info
     if (pincode.length === 6) {
       setDeliveryInfo({
         date: "Thursday, 24 Jul",
@@ -129,7 +120,6 @@ const ProductDetail = ({ mode }) => {
     }
   };
 
-  // Use mock reviews data
   const [reviews, setReviews] = useState([]);
   const [userRating, setUserRating] = useState(0);
   const [userReview, setUserReview] = useState("");
@@ -146,9 +136,11 @@ const ProductDetail = ({ mode }) => {
           buildApiUrl(API_ENDPOINTS.PRODUCT_DETAIL(productId))
         );
         setProduct(response.data.data);
+        setSelectedSize(response.data.data?.sizes ? response.data.data.sizes[0] : null);
+        setSelectedColor(response.data.data?.colors ? response.data.data.colors[0] : null);
         setLoading(false);
       } catch (error) {
-        const apiError = handleApiError(error);
+        handleApiError(error);
         setProduct(null);
       }
     };
@@ -164,7 +156,6 @@ const ProductDetail = ({ mode }) => {
     fetchReviews();
   }, [productId]);
 
-  // Calculate average rating
   const averageRating =
     reviews.length > 0
       ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
@@ -179,7 +170,6 @@ const ProductDetail = ({ mode }) => {
       setUserRating(0);
       setUserReview("");
       setReviewSuccess(true);
-      // Refetch reviews
       const data = await fetchReviewsForProduct(productId);
       setReviews(data);
       setTimeout(() => setReviewSuccess(false), 2000);
@@ -192,7 +182,6 @@ const ProductDetail = ({ mode }) => {
     if (!reviewToDelete) return;
     try {
       await deleteReview(reviewToDelete);
-      // Refetch reviews
       const data = await fetchReviewsForProduct(productId);
       setReviews(data);
     } catch (error) {
@@ -203,20 +192,54 @@ const ProductDetail = ({ mode }) => {
     }
   };
 
+  const isAddToCartDisabled = product?.stock === 0 || !selectedSize || !selectedColor;
+  const addToCartTooltip = !selectedSize
+    ? "Please select a size"
+    : !selectedColor
+    ? "Please select a color"
+    : product?.stock === 0
+    ? "Out of stock"
+    : "";
+
   if (loading) {
     return (
-      <Box sx={{ py: 8, textAlign: "center" }}>
+      <Box
+        sx={{
+          py: 8,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          bgcolor: mode === "dark" ? "#181818" : "#fff",
+          minHeight: "100vh",
+        }}
+      >
         <Container maxWidth="lg">
-          <Typography variant="h5">Loading...</Typography>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              border: `3px solid ${mode === "dark" ? "#666" : "#e0e0e0"}`,
+              borderTop: `3px solid ${mode === "dark" ? "#ccc" : "#666"}`,
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+              "@keyframes spin": {
+                "0%": { transform: "rotate(0deg)" },
+                "100%": { transform: "rotate(360deg)" },
+              },
+              mx: "auto",
+            }}
+          />
         </Container>
       </Box>
     );
   }
   if (!product) {
     return (
-      <Box sx={{ py: 8, textAlign: "center" }}>
+      <Box sx={{ py: 8, textAlign: "center", bgcolor: mode === "dark" ? "#181818" : "#fff" }}>
         <Container maxWidth="lg">
-          <Typography variant="h5">Product not found</Typography>
+          <Typography variant="h5" sx={{ color: mode === "dark" ? "#fff" : matteColors[900] }}>
+            Product not found
+          </Typography>
         </Container>
       </Box>
     );
@@ -225,16 +248,16 @@ const ProductDetail = ({ mode }) => {
   return (
     <Box
       sx={{
-          pt:{md:2},
         bgcolor: mode === "dark" ? "#181818" : "#fff",
         color: mode === "dark" ? "#fff" : "inherit",
         minHeight: "100vh",
         width: "100%",
         transition: "background 0.3s, color 0.3s",
+        py: { xs: 4, md: 6 },
       }}
     >
       <Container maxWidth="xl" disableGutters={isMobile}>
-        <Grid container spacing={{ xs: 2, md: 6 }}>
+        <Grid container spacing={{ xs: 2, md: 4 }} sx={{ px: { xs: 2, md: 0 } }}>
           {/* Image Gallery (Left) */}
           <Grid item xs={12} md={7}>
             <Box
@@ -242,24 +265,22 @@ const ProductDetail = ({ mode }) => {
                 display: { xs: "block", md: "flex" },
                 flexDirection: { xs: "column", md: "row" },
                 alignItems: { xs: "stretch", md: "flex-start" },
-                gap: { xs: 1, md: 2 },
+                gap: { xs: 2, md: 3 },
               }}
             >
-              {/* Main Image in its own bordered box */}
+              {/* Main Image */}
               <Box
                 sx={{
                   position: "relative",
-                  mb: { xs: 2, md: 0 },
-                  border: "1px solid #eee",
+                  border: `1px solid ${mode === "dark" ? "#444" : "#eee"}`,
                   borderRadius: { xs: 0, md: 2 },
                   overflow: "hidden",
-                  maxWidth: { xs: "100%", md: "600px" },
-                  width: { xs: "100vw", md: "600px" },
-                  height: { xs: "auto", md: "600px" },
-                  background: "#fff",
+                  width: "100%",
+                  maxWidth: { xs: "100%", md: 600 },
+                  height: { xs: 400, md: 600 },
+                  background: mode === "dark" ? "#222" : "#fff",
                 }}
               >
-                {/* Left Arrow */}
                 {images.length > 1 && (
                   <IconButton
                     onClick={() =>
@@ -272,16 +293,15 @@ const ProductDetail = ({ mode }) => {
                       top: "50%",
                       left: 8,
                       zIndex: 2,
-                      background: "rgba(0,0,0,0.3)",
-                      color: "#fff",
+                      background: mode === "dark" ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.5)",
+                      color: mode === "dark" ? "#000" : "#fff",
                       transform: "translateY(-50%)",
-                      display: { xs: "flex", md: "flex" },
-                      "&:hover": { background: "rgba(0,0,0,0.5)" },
+                      "&:hover": {
+                        background: mode === "dark" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.7)",
+                      },
                     }}
                   >
-                    <span style={{ fontSize: 28, fontWeight: 700 }}>
-                      &#8592;
-                    </span>
+                    <ArrowBackIcon />
                   </IconButton>
                 )}
                 <Box
@@ -295,11 +315,10 @@ const ProductDetail = ({ mode }) => {
                     display: "block",
                     transition: "transform 0.5s ease",
                     "&:hover": {
-                      transform: "scale(1.1)",
+                      transform: "scale(1.05)",
                     },
                   }}
                 />
-                {/* Right Arrow */}
                 {images.length > 1 && (
                   <IconButton
                     onClick={() =>
@@ -310,32 +329,29 @@ const ProductDetail = ({ mode }) => {
                       top: "50%",
                       right: 8,
                       zIndex: 2,
-                      background: "rgba(0,0,0,0.3)",
-                      color: "#fff",
+                      background: mode === "dark" ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.5)",
+                      color: mode === "dark" ? "#000" : "#fff",
                       transform: "translateY(-50%)",
-                      display: { xs: "flex", md: "flex" },
-                      "&:hover": { background: "rgba(0,0,0,0.5)" },
+                      "&:hover": {
+                        background: mode === "dark" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.7)",
+                      },
                     }}
                   >
-                    <span style={{ fontSize: 28, fontWeight: 700 }}>
-                      &#8594;
-                    </span>
+                    <ArrowForwardIcon />
                   </IconButton>
                 )}
               </Box>
-              {/* Thumbnails - vertical column, outside main image box */}
+              {/* Thumbnails */}
               <Box
                 sx={{
-                    px:{xs:2},
-                  display: { xs: "flex", md: "flex" },
+                  display: "flex",
                   flexDirection: { xs: "row", md: "column" },
-                  gap: 1,
+                  gap: 1.5,
                   flexWrap: { xs: "wrap", md: "nowrap" },
-                  width: { xs: "100%", md: "auto" },
-                  maxWidth: { xs: "100%", md: "120px" },
+                  maxWidth: { xs: "100%", md: 100 },
                   alignSelf: { xs: "auto", md: "flex-start" },
-                  mt: { xs: 1, md: 0 },
-                  ml: { xs: 0, md: 2 }, // Add left margin in desktop to separate from main image
+                  mt: { xs: 2, md: 0 },
+                  ml: { xs: 0, md: 2 },
                   background: "transparent",
                 }}
               >
@@ -347,15 +363,15 @@ const ProductDetail = ({ mode }) => {
                       cursor: "pointer",
                       border:
                         mainImageIndex === index
-                          ? `2px solid ${matteColors[900]}`
+                          ? `2px solid ${mode === "dark" ? "#fff" : matteColors[900]}`
                           : "2px solid transparent",
-                      borderRadius: 2,
+                      borderRadius: 1,
                       overflow: "hidden",
                       transition: "border-color 0.3s ease",
-                      width: { xs: "70px", md: "90px" },
-                      height: { xs: "70px", md: "90px" },
+                      width: { xs: 70, md: 80 },
+                      height: { xs: 70, md: 80 },
                       flexShrink: 0,
-                      background: "#fff",
+                      background: mode === "dark" ? "#222" : "#fff",
                     }}
                   >
                     <Box
@@ -379,55 +395,48 @@ const ProductDetail = ({ mode }) => {
           <Grid item xs={12} md={5}>
             <Box
               sx={{
-                   px:{xs:2},
-                position: "sticky",
-                top: 100,
-                color: mode === "dark" ? "#fff" : "inherit",
+                position: { md: "sticky" },
+                top: { md: 100 },
+                p: { xs: 2, md: 3 },
+                bgcolor: mode === "dark" ? "#222" : "#fff",
+                borderRadius: 2,
+                boxShadow: mode === "dark" ? "0 4px 12px rgba(0,0,0,0.3)" : "0 4px 12px rgba(0,0,0,0.08)",
               }}
             >
               <Typography
                 variant="h4"
                 component="h1"
-                sx={{ fontWeight: 600, mb: 1.5, letterSpacing: "-0.02em" }}
+                sx={{
+                  fontWeight: 700,
+                  mb: 2,
+                  color: mode === "dark" ? "#fff" : matteColors[900],
+                  fontSize: { xs: "1.8rem", md: "2.2rem" },
+                }}
               >
                 {product.name}
               </Typography>
-              <Typography sx={{ fontWeight: 500, mb: 1 }}>
+              <Typography
+                sx={{
+                  fontWeight: 500,
+                  mb: 2,
+                  color: mode === "dark" ? "#ccc" : matteColors[700],
+                }}
+              >
                 {product.inStock ? (
                   `In Stock: ${product.stockQuantity}`
                 ) : (
-                  <span style={{ color: "red" }}>Out of Stock</span>
+                  <span style={{ color: mode === "dark" ? "#ff6666" : "red" }}>
+                    Out of Stock
+                  </span>
                 )}
               </Typography>
-
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <Rating 
-                  value={averageRating} 
-                  precision={0.5} 
-                  readOnly 
-                  sx={mode === "dark" ? {
-                    color: "#FFD700", // gold for filled stars
-                    '& .MuiRating-iconEmpty': {
-                      color: "#555", // dim for empty stars
-                    },
-                    '& .MuiRating-iconHover': {
-                      color: "#FFF700", // lighter gold on hover
-                    },
-                  } : {}}
-                />
-                <Typography
-                  sx={{ ml: 1, color: mode === "dark" ? "#fff" : "inherit" }}
-                >
-                  ({reviews.length} reviews)
-                </Typography>
-              </Box>
 
               <Typography
                 variant="h4"
                 sx={{
                   fontWeight: 700,
-                  mb: 2,
-                  color: mode === "dark" ? "#fff" : matteColors[800],
+                  mb: 3,
+                  color: mode === "dark" ? "#fff" : matteColors[900],
                 }}
               >
                 ₹{product.price.toLocaleString()}
@@ -435,110 +444,109 @@ const ProductDetail = ({ mode }) => {
 
               {/* Color Selector */}
               <Box sx={{ mb: 3 }}>
-  <Typography sx={{ fontWeight: 500, mb: 1 }}>
-    Color: {selectedColor}
-  </Typography>
-  <Box sx={{ display: "flex", gap: 1 }}>
-    {product.colors.map((color) => {
-      const isSelected = selectedColor === color;
-      const isDark = mode === "dark";
-
-      return (
-        <Chip
-          key={color}
-          label={color}
-          onClick={() => setSelectedColor(color)}
-          variant={isSelected ? "filled" : "outlined"}
-          sx={{
-            cursor: "pointer",
-            borderColor: isDark ? "#fff" : "#181818",
-            backgroundColor: isSelected
-              ? isDark
-                ? "#fff"
-                : "#181818"
-              : "transparent",
-            color: isSelected
-              ? isDark
-                ? "#181818"
-                : "#fff"
-              : isDark
-              ? "#fff"
-              : "#181818",
-            "&:hover": {
-              backgroundColor: isSelected
-                ? isDark
-                  ? "#fff"
-                  : "#181818"
-                : isDark
-                ? "#222"
-                : "#f5f5f5",
-              color: isSelected
-                ? isDark
-                  ? "#181818"
-                  : "#fff"
-                : isDark
-                ? "#fff"
-                : "#181818",
-            },
-          }}
-        />
-      );
-    })}
-  </Box>
-</Box>
+                <Typography
+                  sx={{
+                    fontWeight: 500,
+                    mb: 1,
+                    color: mode === "dark" ? "#ccc" : matteColors[700],
+                  }}
+                >
+                  Color: {selectedColor || "Select a color"}
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {product.colors.map((color) => (
+                    <Chip
+                      key={color}
+                      label={color}
+                      onClick={() => setSelectedColor(color)}
+                      variant={selectedColor === color ? "filled" : "outlined"}
+                      sx={{
+                        cursor: "pointer",
+                        minWidth: "60px",
+                        borderColor: mode === "dark" ? "#fff" : matteColors[700],
+                        backgroundColor:
+                          selectedColor === color
+                            ? mode === "dark"
+                              ? "#fff"
+                              : matteColors[900]
+                            : "transparent",
+                        color:
+                          selectedColor === color
+                            ? mode === "dark"
+                              ? matteColors[900]
+                              : "#fff"
+                            : mode === "dark"
+                            ? "#fff"
+                            : matteColors[700],
+                        "&:hover": {
+                          backgroundColor:
+                            selectedColor === color
+                              ? mode === "dark"
+                                ? "#fff"
+                                : matteColors[900]
+                              : mode === "dark"
+                              ? "#333"
+                              : matteColors[100],
+                        },
+                        fontSize: { xs: "0.85rem", md: "0.9rem" },
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
 
               {/* Size Selector */}
-            <Box sx={{ mb: 3 }}>
-  <Typography sx={{ fontWeight: 500, mb: 1 }}>Size</Typography>
-  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-    {product.sizes.map((size) => {
-      const isSelected = selectedSize === size;
-      const isDark = mode === "dark";
-
-      return (
-        <Chip
-          key={size}
-          label={size}
-          onClick={() => setSelectedSize(size)}
-          variant={isSelected ? "filled" : "outlined"}
-          sx={{
-            cursor: "pointer",
-            minWidth: "48px",
-            borderColor: isDark ? "#fff" : "#181818",
-            backgroundColor: isSelected
-              ? isDark
-                ? "#fff"
-                : "#181818"
-              : "transparent",
-            color: isSelected
-              ? isDark
-                ? "#181818"
-                : "#fff"
-              : isDark
-              ? "#fff"
-              : "#181818",
-            "&:hover": {
-              backgroundColor: isSelected
-                ? isDark
-                  ? "#fff"
-                  : "#181818"
-                : isDark
-                ? "#222"
-                : "#f5f5f5",
-              color: isSelected
-                ? isDark
-                  ? "#181818"
-                  : "#fff"
-                : isDark
-                ? "#fff"
-                : "#181818",
-            },
-          }}
-        />
-      );
-    })}
-  </Box>
-</Box>
+              <Box sx={{ mb: 3 }}>
+                <Typography
+                  sx={{
+                    fontWeight: 500,
+                    mb: 1,
+                    color: mode === "dark" ? "#ccc" : matteColors[700],
+                  }}
+                >
+                  Size: {selectedSize || "Select a size"}
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {product.sizes.map((size) => (
+                    <Chip
+                      key={size}
+                      label={size}
+                      onClick={() => setSelectedSize(size)}
+                      variant={selectedSize === size ? "filled" : "outlined"}
+                      sx={{
+                        cursor: "pointer",
+                        minWidth: "48px",
+                        borderColor: mode === "dark" ? "#fff" : matteColors[700],
+                        backgroundColor:
+                          selectedSize === size
+                            ? mode === "dark"
+                              ? "#fff"
+                              : matteColors[900]
+                            : "transparent",
+                        color:
+                          selectedSize === size
+                            ? mode === "dark"
+                              ? matteColors[900]
+                              : "#fff"
+                            : mode === "dark"
+                            ? "#fff"
+                            : matteColors[700],
+                        "&:hover": {
+                          backgroundColor:
+                            selectedSize === size
+                              ? mode === "dark"
+                                ? "#fff"
+                                : matteColors[900]
+                              : mode === "dark"
+                              ? "#333"
+                              : matteColors[100],
+                        },
+                        fontSize: { xs: "0.85rem", md: "0.9rem" },
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
 
               {/* Quantity & Add to Cart */}
               <Grid container spacing={2} sx={{ mb: 3 }} alignItems="center">
@@ -547,28 +555,34 @@ const ProductDetail = ({ mode }) => {
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      border: `1px solid ${
-                        mode === "dark" ? "#fff" : "#696969ff"
-                      }`,
-                      borderRadius: 2,
+                      border: `1px solid ${mode === "dark" ? "#444" : matteColors[600]}`,
+                      borderRadius: 1,
                       justifyContent: "space-between",
+                      bgcolor: mode === "dark" ? "#333" : "#fff",
                     }}
                   >
                     <IconButton
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                       size="small"
                       sx={{
-                        color: mode === "dark" ? "#fff" : "inherit",
+                        color: mode === "dark" ? "#fff" : matteColors[900],
                       }}
                     >
                       <RemoveIcon />
                     </IconButton>
-                    <Typography sx={{ fontWeight: 600 }}>{quantity}</Typography>
+                    <Typography
+                      sx={{
+                        fontWeight: 600,
+                        color: mode === "dark" ? "#fff" : matteColors[900],
+                      }}
+                    >
+                      {quantity}
+                    </Typography>
                     <IconButton
                       onClick={() => setQuantity((q) => q + 1)}
                       size="small"
                       sx={{
-                        color: mode === "dark" ? "#fff" : "inherit",
+                        color: mode === "dark" ? "#fff" : matteColors[900],
                       }}
                     >
                       <AddIcon />
@@ -576,54 +590,60 @@ const ProductDetail = ({ mode }) => {
                   </Box>
                 </Grid>
                 <Grid item xs={7} sm={8}>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    size="large"
-                    disabled={
-                      product.stock === 0 || !selectedSize || !selectedColor
-                    }
-                    onClick={async () => {
-                      // Always store only the filename in cart
-                      let imageFilename = product.image;
-                      if (imageFilename && imageFilename.startsWith("http")) {
-                        const parts = imageFilename.split("/");
-                        imageFilename = parts[parts.length - 1];
-                      }
-                      const cartProduct = {
-                        _id: product._id,
-                        name: product.name,
-                        price: product.price,
-                        image: imageFilename,
-                        description: product.description,
-                        category: product.category,
-                        subCategory: product.subCategory,
-                        collection: product.collectionName,
-                        colors: product.colors,
-                        gender: product.gender,
-                      };
-                      await addToCart(
-                        cartProduct,
-                        quantity,
-                        selectedSize,
-                        selectedColor
-                      );
-                      navigate("/cart");
-                    }}
-                    sx={{
-                      py: 1.5,
-                      backgroundColor: mode === "dark" ? "#fff" : "#181818",
-                      color: mode === "dark" ? "#181818" : "#fff",
-                      borderRadius: 2,
-                      "&:hover": {
-                        backgroundColor: mode === "dark" ? "#181818" : "#fff",
-                        color: mode === "dark" ? "#fff" : "#181818",
-                      },
-                      boxShadow: "none",
-                    }}
-                  >
-                    {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
-                  </Button>
+                  <Tooltip title={addToCartTooltip} disableHoverListener={!isAddToCartDisabled}>
+                    <span>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        size="large"
+                        disabled={isAddToCartDisabled}
+                        onClick={async () => {
+                          let imageFilename = product.image;
+                          if (imageFilename && imageFilename.startsWith("http")) {
+                            const parts = imageFilename.split("/");
+                            imageFilename = parts[parts.length - 1];
+                          }
+                          const cartProduct = {
+                            _id: product._id,
+                            name: product.name,
+                            price: product.price,
+                            image: imageFilename,
+                            description: product.description,
+                            category: product.category,
+                            subCategory: product.subCategory,
+                            collection: product.collectionName,
+                            colors: product.colors,
+                            gender: product.gender,
+                          };
+                          await addToCart(
+                            cartProduct,
+                            quantity,
+                            selectedSize,
+                            selectedColor
+                          );
+                          navigate("/cart");
+                        }}
+                        sx={{
+                          py: 1.5,
+                          backgroundColor: mode === "dark" ? "#fff" : matteColors[900],
+                          color: mode === "dark" ? matteColors[900] : "#fff",
+                          borderRadius: 1,
+                          "&:hover": {
+                            backgroundColor: mode === "dark" ? "#ccc" : matteColors[800],
+                            transform: "translateY(-2px)",
+                          },
+                          "&:disabled": {
+                            backgroundColor: mode === "dark" ? "#555" : "#ddd",
+                            color: "#aaa",
+                          },
+                          transition: "all 0.3s ease",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                      </Button>
+                    </span>
+                  </Tooltip>
                 </Grid>
               </Grid>
 
@@ -635,14 +655,16 @@ const ProductDetail = ({ mode }) => {
                 onClick={handleWishlistToggle}
                 sx={{
                   py: 1.5,
-                  borderColor: mode === "dark" ? "#fff" : "#181818",
-                  color: mode === "dark" ? "#fff" : "#181818",
-                  borderRadius: 2,
+                  borderColor: mode === "dark" ? "#fff" : matteColors[900],
+                  color: mode === "dark" ? "#fff" : matteColors[900],
+                  borderRadius: 1,
                   mb: 3,
-                  background: "none",
                   "&:hover": {
-                    background: mode === "dark" ? "#222" : "#f5f5f5",
+                    backgroundColor: mode === "dark" ? "#333" : matteColors[100],
+                    transform: "translateY(-2px)",
                   },
+                  transition: "all 0.3s ease",
+                  fontWeight: 600,
                 }}
               >
                 {isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
@@ -651,63 +673,63 @@ const ProductDetail = ({ mode }) => {
               {/* Delivery Pincode Check */}
               <Box
                 sx={{
-                  border: `1px solid ${mode === "dark" ? "#fff" : "#181818"}`,
-                  borderRadius: 2,
+                  border: `1px solid ${mode === "dark" ? "#444" : matteColors[600]}`,
+                  borderRadius: 1,
                   p: 2,
+                  bgcolor: mode === "dark" ? "#222" : "#fff",
                 }}
               >
-                <Typography sx={{ fontWeight: 600, mb: 1 }}>
-                  Delivery Options
-                </Typography>
-                <Box
+                <Typography
                   sx={{
-                    display: "flex",
-                    gap: 1,
-                    color: mode === "dark" ? "#fff" : "inherit",
-                    borderColor: mode === "dark" ? "#fff" : "#181818",
+                    fontWeight: 600,
+                    mb: 1.5,
+                    color: mode === "dark" ? "#fff" : matteColors[900],
                   }}
                 >
+                  Delivery Options
+                </Typography>
+                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                   <TextField
                     variant="outlined"
                     size="small"
                     placeholder="Enter Pincode"
                     value={pincode}
                     onChange={(e) => setPincode(e.target.value)}
-                    InputProps={{
-                      style: {
-                        color: mode === "dark" ? "#fff" : "#181818",
-                        borderColor: mode === "dark" ? "#fff" : "#181818",
-                      },
-                    }}
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         "& fieldset": {
-                          borderColor: mode === "dark" ? "#fff" : "#181818",
+                          borderColor: mode === "dark" ? "#444" : matteColors[600],
                         },
                         "&:hover fieldset": {
-                          borderColor: mode === "dark" ? "#fff" : "#181818",
+                          borderColor: mode === "dark" ? "#fff" : matteColors[900],
                         },
                         "&.Mui-focused fieldset": {
-                          borderColor: mode === "dark" ? "#fff" : "#181818",
+                          borderColor: mode === "dark" ? "#fff" : matteColors[900],
                         },
-                        color: mode === "dark" ? "#fff" : "#181818",
+                        color: mode === "dark" ? "#fff" : matteColors[900],
                       },
                       input: {
-                        color: mode === "dark" ? "#fff" : "#181818",
+                        color: mode === "dark" ? "#fff" : matteColors[900],
                         "::placeholder": {
-                          color: mode === "dark" ? "#fff" : "#181818",
+                          color: mode === "dark" ? "#ccc" : matteColors[700],
                           opacity: 1,
                         },
                       },
+                      flex: 1,
                     }}
                   />
                   <Button
                     variant="contained"
                     onClick={handlePincodeCheck}
                     sx={{
-                      color: mode === "dark" ? "#181818" : "#fff",
-                      //  borderColor: mode === "dark" ? "#fff" : "#181818",
-                      backgroundColor: mode === "dark" ? "#fff" : "#181818",
+                      backgroundColor: mode === "dark" ? "#fff" : matteColors[900],
+                      color: mode === "dark" ? matteColors[900] : "#fff",
+                      "&:hover": {
+                        backgroundColor: mode === "dark" ? "#ccc" : matteColors[800],
+                      },
+                      borderRadius: 1,
+                      px: 3,
+                      fontWeight: 600,
                     }}
                   >
                     Check
@@ -719,7 +741,7 @@ const ProductDetail = ({ mode }) => {
                       mt: 1.5,
                       display: "flex",
                       alignItems: "center",
-                      color: "green",
+                      color: mode === "dark" ? "#4caf50" : "green",
                     }}
                   >
                     <CheckIcon sx={{ mr: 1 }} />
@@ -732,59 +754,55 @@ const ProductDetail = ({ mode }) => {
 
               {/* Product Details Accordion */}
               <Box sx={{ mt: 3 }}>
-                <Accordion defaultExpanded>
+                <Accordion defaultExpanded sx={{ bgcolor: mode === "dark" ? "#222" : "#fff" }}>
                   <AccordionSummary
                     expandIcon={
                       <ExpandMoreIcon
-                        sx={{ color: mode === "dark" ? "#fff" : "#181818" }}
+                        sx={{ color: mode === "dark" ? "#fff" : matteColors[900] }}
                       />
                     }
-                    sx={{ bgcolor: mode === "dark" ? "#232323" : undefined }}
+                    sx={{ bgcolor: mode === "dark" ? "#222" : "#fff" }}
                   >
                     <Typography
                       sx={{
                         fontWeight: 600,
-                        color: mode === "dark" ? "#fff" : "#181818",
+                        color: mode === "dark" ? "#fff" : matteColors[900],
                       }}
                     >
                       Product Description
                     </Typography>
                   </AccordionSummary>
-                  <AccordionDetails
-                    sx={{ bgcolor: mode === "dark" ? "#232323" : undefined }}
-                  >
+                  <AccordionDetails sx={{ bgcolor: mode === "dark" ? "#222" : "#fff" }}>
                     <Typography
                       variant="body2"
-                      sx={{ color: mode === "dark" ? "#fff" : "#181818" }}
+                      sx={{ color: mode === "dark" ? "#ccc" : matteColors[700] }}
                     >
                       {product.description}
                     </Typography>
                   </AccordionDetails>
                 </Accordion>
-                <Accordion>
+                <Accordion sx={{ bgcolor: mode === "dark" ? "#222" : "#fff" }}>
                   <AccordionSummary
                     expandIcon={
                       <ExpandMoreIcon
-                        sx={{ color: mode === "dark" ? "#fff" : "#181818" }}
+                        sx={{ color: mode === "dark" ? "#fff" : matteColors[900] }}
                       />
                     }
+                    sx={{ bgcolor: mode === "dark" ? "#222" : "#fff" }}
                   >
                     <Typography
                       sx={{
                         fontWeight: 600,
-                        color: "#181818",
-                        //backgroundColor: mode === "dark" ? "#181818" : "#fff",
+                        color: mode === "dark" ? "#fff" : matteColors[900],
                       }}
                     >
                       Material & Care
                     </Typography>
                   </AccordionSummary>
-                  <AccordionDetails>
+                  <AccordionDetails sx={{ bgcolor: mode === "dark" ? "#222" : "#fff" }}>
                     <Typography
-                      sx={{
-                        color: "#181818",
-                      }}
                       variant="body2"
+                      sx={{ color: mode === "dark" ? "#ccc" : matteColors[700] }}
                     >
                       {product.material}
                     </Typography>
@@ -795,7 +813,7 @@ const ProductDetail = ({ mode }) => {
               {cartMessage && (
                 <Typography
                   color="success.main"
-                  sx={{ mt: 1, mb: 1, textAlign: "center" }}
+                  sx={{ mt: 2, textAlign: "center" }}
                 >
                   {cartMessage}
                 </Typography>
@@ -804,236 +822,322 @@ const ProductDetail = ({ mode }) => {
           </Grid>
         </Grid>
       </Container>
-      {/* Reviews Section */}
-      <Box
-        sx={{
-          mt: 6,
-          mb: 6,
-          px: { xs: 1, sm: 2, md: 0 },
-          maxWidth: 700,
-          mx: "auto",
-        }}
-      >
-        <Paper
-          elevation={3}
+
+      {/* Reviews Section (Only if reviews exist or user is authenticated) */}
+      {(reviews.length > 0 || isAuthenticated) && (
+        <Box
           sx={{
-            p: { xs: 2, sm: 3 },
-            borderRadius: 3,
-            bgcolor: "background.paper",
+            mt: 6,
+            mb: 6,
+            px: { xs: 2, md: 0 },
+            maxWidth: 800,
+            mx: "auto",
           }}
         >
-          <Typography
-            variant="h5"
+          <Paper
+            elevation={3}
             sx={{
-              fontWeight: 700,
-              mb: 2,
-              textAlign: { xs: "center", md: "left" },
+              p: { xs: 3, md: 4 },
+              borderRadius: 2,
+              bgcolor: mode === "dark" ? "#222" : "#fff",
+              boxShadow: mode === "dark" ? "0 4px 12px rgba(0,0,0,0.3)" : "0 4px 12px rgba(0,0,0,0.08)",
             }}
           >
-            Customer Reviews
-          </Typography>
-          {reviews.length === 0 ? (
             <Typography
-              color="text.secondary"
-              sx={{ textAlign: "center", mb: 2 }}
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                mb: 3,
+                color: mode === "dark" ? "#fff" : matteColors[900],
+              }}
             >
-              No reviews yet.
+              Customer Reviews
             </Typography>
-          ) : (
-            <Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  mb: 2,
-                  flexDirection: { xs: "column", sm: "row" },
-                  gap: 1,
-                }}
+            {reviews.length === 0 ? (
+              <Typography
+                color={mode === "dark" ? "#ccc" : matteColors[700]}
+                sx={{ textAlign: "center", mb: 3 }}
               >
-                <Rating
-                  value={averageRating}
-                  precision={0.1}
-                  readOnly
-                  size={isMobile ? "medium" : "large"}
-                />
-                <Typography
+                No reviews yet.
+              </Typography>
+            ) : (
+              <Box>
+                <Box
                   sx={{
-                    ml: { sm: 1 },
-                    fontWeight: 600,
-                    fontSize: { xs: 16, sm: 18 },
+                    display: "flex",
+                    alignItems: "center",
+                    mb: 3,
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: 1,
                   }}
                 >
-                  {averageRating.toFixed(1)} / 5
-                </Typography>
-                <Typography
-                  sx={{
-                    ml: { sm: 2 },
-                    color: "text.secondary",
-                    fontSize: { xs: 14, sm: 16 },
-                  }}
-                >
-                  ({reviews.length} reviews)
-                </Typography>
+                  <Rating
+                    value={averageRating}
+                    precision={0.1}
+                    readOnly
+                    size={isMobile ? "medium" : "large"}
+                    sx={{
+                      color: mode === "dark" ? "#FFD700" : matteColors[900],
+                      "& .MuiRating-iconEmpty": {
+                        color: mode === "dark" ? "#555" : "#ccc",
+                      },
+                    }}
+                  />
+                  <Typography
+                    sx={{
+                      ml: { sm: 1 },
+                      fontWeight: 600,
+                      color: mode === "dark" ? "#fff" : matteColors[900],
+                      fontSize: { xs: "1rem", sm: "1.1rem" },
+                    }}
+                  >
+                    {averageRating.toFixed(1)} / 5
+                  </Typography>
+                  <Typography
+                    sx={{
+                      ml: { sm: 2 },
+                      color: mode === "dark" ? "#ccc" : matteColors[700],
+                      fontSize: { xs: "0.9rem", sm: "1rem" },
+                    }}
+                  >
+                    ({reviews.length} reviews)
+                  </Typography>
+                </Box>
+                {reviews.map((review) => (
+                  <Paper
+                    key={review._id}
+                    elevation={1}
+                    sx={{
+                      p: { xs: 2, sm: 3 },
+                      mb: 2,
+                      borderRadius: 2,
+                      bgcolor: mode === "dark" ? "#333" : "#fafbfc",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        mb: 1,
+                        flexDirection: { xs: "column", sm: "row" },
+                        gap: 1,
+                      }}
+                    >
+                      <Avatar
+                        sx={{
+                          mr: { sm: 1 },
+                          width: { xs: 36, sm: 44 },
+                          height: { xs: 36, sm: 44 },
+                          fontSize: { xs: 18, sm: 22 },
+                          bgcolor: mode === "dark" ? matteColors[700] : matteColors[600],
+                        }}
+                      >
+                        {review.user?.name ? review.user.name[0] : "?"}
+                      </Avatar>
+                      <Typography
+                        sx={{
+                          fontWeight: 600,
+                          color: mode === "dark" ? "#fff" : matteColors[900],
+                          fontSize: { xs: "0.95rem", sm: "1rem" },
+                        }}
+                      >
+                        {review.user?.name || "User"}
+                      </Typography>
+                      <Rating
+                        value={review.rating}
+                        readOnly
+                        size="small"
+                        sx={{ ml: { sm: 2 } }}
+                      />
+                      <Typography
+                        sx={{
+                          ml: { sm: 2 },
+                          color: mode === "dark" ? "#ccc" : matteColors[700],
+                          fontSize: { xs: "0.85rem", sm: "0.9rem" },
+                        }}
+                      >
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </Typography>
+                      {isAuthenticated &&
+                        user &&
+                        review.user &&
+                        user._id === review.user._id && (
+                          <Button
+                            color="error"
+                            size="small"
+                            sx={{ ml: { sm: "auto" }, mt: { xs: 1, sm: 0 } }}
+                            onClick={() => {
+                              setReviewToDelete(review._id);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        )}
+                    </Box>
+                    <Typography
+                      sx={{
+                        fontSize: { xs: "0.9rem", sm: "1rem" },
+                        color: mode === "dark" ? "#ccc" : matteColors[700],
+                      }}
+                    >
+                      {review.comment}
+                    </Typography>
+                  </Paper>
+                ))}
               </Box>
-              {reviews.map((review) => (
-                <Paper
-                  key={review._id}
-                  elevation={1}
-                  sx={{
-                    p: { xs: 1.5, sm: 2 },
-                    mb: 2,
-                    borderRadius: 2,
-                    bgcolor: "#fafbfc",
-                  }}
-                >
+            )}
+            {isAuthenticated && (
+              <>
+                <Divider sx={{ my: 3, bgcolor: mode === "dark" ? "#444" : matteColors[600] }} />
+                <Box component="form" onSubmit={handleReviewSubmit} sx={{ mt: 2 }}>
                   <Box
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      mb: 1,
                       flexDirection: { xs: "column", sm: "row" },
+                      justifyContent: "space-between",
+                      mb: 2,
                       gap: 1,
                     }}
                   >
-                    <Avatar
+                    <Typography
+                      variant="subtitle1"
                       sx={{
-                        mr: { sm: 1 },
-                        width: { xs: 36, sm: 44 },
-                        height: { xs: 36, sm: 44 },
-                        fontSize: { xs: 18, sm: 22 },
+                        fontWeight: 600,
+                        color: mode === "dark" ? "#fff" : matteColors[900],
+                        minWidth: 120,
                       }}
                     >
-                      {review.user?.name ? review.user.name[0] : "?"}
-                    </Avatar>
-                    <Typography
-                      sx={{ fontWeight: 600, fontSize: { xs: 15, sm: 17 } }}
-                    >
-                      {review.user?.name || "User"}
+                      Write a Review
                     </Typography>
                     <Rating
-                      value={review.rating}
-                      readOnly
-                      size="small"
-                      sx={{ ml: { sm: 2 } }}
-                    />
-                    <Typography
+                      value={userRating}
+                      onChange={(_, value) => setUserRating(value)}
                       sx={{
                         ml: { sm: 2 },
-                        color: "text.secondary",
-                        fontSize: 13,
+                        color: mode === "dark" ? "#FFD700" : matteColors[900],
+                        "& .MuiRating-iconEmpty": {
+                          color: mode === "dark" ? "#555" : "#ccc",
+                        },
                       }}
-                    >
-                      {new Date(review.createdAt).toLocaleDateString()}
-                    </Typography>
-                    {isAuthenticated &&
-                      user &&
-                      review.user &&
-                      user._id === review.user._id && (
-                        <Button
-                          color="error"
-                          size="small"
-                          sx={{ ml: { sm: 2 }, mt: { xs: 1, sm: 0 } }}
-                          onClick={() => {
-                            setReviewToDelete(review._id);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      )}
+                      size={isMobile ? "medium" : "large"}
+                    />
                   </Box>
-                  <Typography sx={{ fontSize: { xs: 14, sm: 16 } }}>
-                    {review.comment}
-                  </Typography>
-                </Paper>
-              ))}
-            </Box>
-          )}
-          <Divider sx={{ my: 3 }} />
-          {/* Review Form (for logged-in users) */}
-          {isAuthenticated && (
-            <Box component="form" onSubmit={handleReviewSubmit} sx={{ mt: 1 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  mb: 1,
-                }}
-              >
-                <Typography
-                  variant="subtitle1"
-                  sx={{ fontWeight: 600, textAlign: "left", minWidth: 120 }}
-                >
-                  Write a Review
-                </Typography>
-                <Rating
-                  value={userRating}
-                  onChange={(_, value) => setUserRating(value)}
-                  sx={{ ml: 2 }}
-                  size={isMobile ? "medium" : "large"}
-                />
-              </Box>
-              <TextField
-                value={userReview}
-                onChange={(e) => setUserReview(e.target.value)}
-                multiline
-                minRows={2}
-                fullWidth
-                placeholder="Share your experience..."
-                sx={{ mb: 1, bgcolor: "#fff", borderRadius: 2 }}
-              />
-              {reviewError && (
-                <Typography
-                  color="error"
-                  sx={{ textAlign: { xs: "center", sm: "left" } }}
-                >
-                  {reviewError}
-                </Typography>
-              )}
+                  <TextField
+                    value={userReview}
+                    onChange={(e) => setUserReview(e.target.value)}
+                    multiline
+                    minRows={3}
+                    fullWidth
+                    placeholder="Share your experience..."
+                    sx={{
+                      mb: 2,
+                      bgcolor: mode === "dark" ? "#333" : "#fff",
+                      borderRadius: 1,
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": {
+                          borderColor: mode === "dark" ? "#444" : matteColors[600],
+                        },
+                        "&:hover fieldset": {
+                          borderColor: mode === "dark" ? "#fff" : matteColors[900],
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: mode === "dark" ? "#fff" : matteColors[900],
+                        },
+                        color: mode === "dark" ? "#fff" : matteColors[900],
+                      },
+                      input: {
+                        color: mode === "dark" ? "#fff" : matteColors[900],
+                        "::placeholder": {
+                          color: mode === "dark" ? "#ccc" : matteColors[700],
+                          opacity: 1,
+                        },
+                      },
+                    }}
+                  />
+                  {reviewError && (
+                    <Typography
+                      color="error"
+                      sx={{ textAlign: { xs: "center", sm: "left" }, mb: 2 }}
+                    >
+                      {reviewError}
+                    </Typography>
+                  )}
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth={isMobile}
+                    disabled={!userRating || !userReview.trim()}
+                    sx={{
+                      py: 1.5,
+                      backgroundColor: mode === "dark" ? "#fff" : matteColors[900],
+                      color: mode === "dark" ? matteColors[900] : "#fff",
+                      borderRadius: 1,
+                      fontWeight: 600,
+                      "&:hover": {
+                        backgroundColor: mode === "dark" ? "#ccc" : matteColors[800],
+                        transform: "translateY(-2px)",
+                      },
+                      "&:disabled": {
+                        backgroundColor: mode === "dark" ? "#555" : "#ddd",
+                        color: "#aaa",
+                      },
+                      transition: "all 0.3s ease",
+                    }}
+                  >
+                    Submit Review
+                  </Button>
+                  {reviewSuccess && (
+                    <Typography
+                      color="success.main"
+                      sx={{ mt: 2, textAlign: { xs: "center", sm: "left" } }}
+                    >
+                      Review submitted!
+                    </Typography>
+                  )}
+                </Box>
+              </>
+            )}
+          </Paper>
+          {/* Delete Confirmation Dialog */}
+          <Dialog
+            open={deleteDialogOpen}
+            onClose={() => setDeleteDialogOpen(false)}
+            PaperProps={{
+              sx: {
+                bgcolor: mode === "dark" ? "#222" : "#fff",
+                color: mode === "dark" ? "#fff" : matteColors[900],
+              },
+            }}
+          >
+            <DialogTitle sx={{ color: mode === "dark" ? "#fff" : matteColors[900] }}>
+              Delete Review
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText sx={{ color: mode === "dark" ? "#ccc" : matteColors[700] }}>
+                Are you sure you want to delete this review? This action cannot be undone.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
               <Button
-                type="submit"
-                variant="contained"
-                fullWidth={isMobile}
-                disabled={!userRating || !userReview.trim()}
-                sx={{ mt: 1, py: 1.2, fontWeight: 600 }}
+                onClick={() => setDeleteDialogOpen(false)}
+                sx={{ color: mode === "dark" ? "#ccc" : matteColors[900] }}
               >
-                Submit Review
+                Cancel
               </Button>
-              {reviewSuccess && (
-                <Typography
-                  color="success.main"
-                  sx={{ mt: 1, textAlign: { xs: "center", sm: "left" } }}
-                >
-                  Review submitted!
-                </Typography>
-              )}
-            </Box>
-          )}
-        </Paper>
-        {/* Delete Confirmation Dialog */}
-        <Dialog
-          open={deleteDialogOpen}
-          onClose={() => setDeleteDialogOpen(false)}
-        >
-          <DialogTitle>Delete Review</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Are you sure you want to delete this review? This action cannot be
-              undone.
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
-              Cancel
-            </Button>
-            <Button onClick={handleDeleteReview} color="error" autoFocus>
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+              <Button
+                onClick={handleDeleteReview}
+                color="error"
+                autoFocus
+                sx={{ color: mode === "dark" ? "#ff6666" : "error.main" }}
+              >
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Box>
+      )}
     </Box>
   );
 };

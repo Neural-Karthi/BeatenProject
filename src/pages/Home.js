@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSwipeable } from "react-swipeable";
-
 import {
   Box,
   Grid,
@@ -15,6 +14,7 @@ import {
   useMediaQuery,
   Container,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import {
   LocalShipping as ShippingIcon,
@@ -22,7 +22,6 @@ import {
   Support as SupportIcon,
   Star as StarIcon,
 } from "@mui/icons-material";
-import HeroSearchBar from "../components/common/HeroSearchBar";
 import {
   heroSlides,
   mobileHeroSlides,
@@ -40,8 +39,6 @@ const matteColors = {
   600: "#525252", // Light matte black
   100: "#f5f5f5", // Off-white
 };
-
-// Removed BACKEND_URL as it's now handled by the centralized API
 
 const Home = ({ mode }) => {
   const navigate = useNavigate();
@@ -75,6 +72,7 @@ const Home = ({ mode }) => {
   const [coOrdSets, setCoOrdSets] = useState([]);
   const [shopByCategory, setShopByCategory] = useState([]);
   var categoryProducts = [];
+
   // Refs for each section
   const sectionRefs = {
     "t-shirts": useRef(null),
@@ -138,7 +136,6 @@ const Home = ({ mode }) => {
 
         if (response.data && response.data.data) {
           const profile = response.data.data;
-          // Fallback: ensure subscription object always exists
           const subscription = profile.subscription || {
             isSubscribed: false,
             subscriptionCost: 0,
@@ -148,7 +145,6 @@ const Home = ({ mode }) => {
           };
           setUserProfile({ ...profile, subscription });
 
-          // Check if user is subscribed and subscription is not expired
           const isCurrentlySubscribed =
             subscription.isSubscribed &&
             subscription.subscriptionExpiry &&
@@ -196,13 +192,11 @@ const Home = ({ mode }) => {
   // Process products into categories when allProducts changes
   useEffect(() => {
     if (allProducts.length > 0) {
-      // Get best sellers (products with highest soldCount)
       const sortedBySales = [...allProducts].sort(
         (a, b) => (b.soldCount || 0) - (a.soldCount || 0)
       );
       setBestSellers(sortedBySales.slice(0, 5));
 
-      // Get products by category with proper filtering
       const tShirtsProducts = allProducts.filter(
         (p) => p.category === "T-shirts" && p.subCategory !== "Oversized"
       );
@@ -211,7 +205,6 @@ const Home = ({ mode }) => {
       const shirtsProducts = allProducts.filter((p) => p.category === "Shirts");
       setShirts(shirtsProducts.slice(0, 3));
 
-      // Oversized T-shirts - filter by both category and subCategory
       const oversizedTShirtsProducts = allProducts.filter(
         (p) =>
           p.category === "T-shirts" &&
@@ -221,13 +214,11 @@ const Home = ({ mode }) => {
       );
       setOversizedTShirts(oversizedTShirtsProducts.slice(0, 3));
 
-      // Bottom Wear - exclude Cargo Pants
       const bottomWearProducts = allProducts.filter(
         (p) => p.category === "Bottom Wear" && p.subCategory !== "Cargo Pants"
       );
       setBottomWear(bottomWearProducts.slice(0, 3));
 
-      // Cargo Pants - specific subcategory
       const cargoPantsProducts = allProducts.filter(
         (p) =>
           p.category === "Bottom Wear" &&
@@ -246,7 +237,6 @@ const Home = ({ mode }) => {
       );
       setHoodies(hoodiesProducts.slice(0, 3));
 
-      // Co-ord Sets - specific category
       const coOrdSetsProducts = allProducts.filter(
         (p) =>
           p.category === "Co-ord Sets" ||
@@ -254,7 +244,6 @@ const Home = ({ mode }) => {
       );
       setCoOrdSets(coOrdSetsProducts.slice(0, 3));
 
-      // Set shop by category (mix of different categories)
       const categoryMix = [
         ...tShirtsProducts.slice(0, 1),
         ...shirtsProducts.slice(0, 1),
@@ -359,35 +348,38 @@ const Home = ({ mode }) => {
     onSwipedLeft: () => setCurrentSlide((prev) => (prev + 1) % slides.length),
     onSwipedRight: () =>
       setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length),
-    trackMouse: true, // optional: allows mouse dragging too
+    trackMouse: true,
   });
 
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
 
-useEffect(() => {
-  // Set the launch date (e.g., 1 month from now)
-  const launchDate = new Date();
-  launchDate.setMonth(launchDate.getMonth() + 1);
+  useEffect(() => {
+    const launchDate = new Date();
+    launchDate.setMonth(launchDate.getMonth() + 1);
 
-  const interval = setInterval(() => {
-    const now = new Date();
-    const diff = launchDate - now;
+    const interval = setInterval(() => {
+      const now = new Date();
+      const diff = launchDate - now;
 
-    if (diff <= 0) {
-      clearInterval(interval);
-      setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-    } else {
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-      setTimeLeft({ days, hours, minutes, seconds });
-    }
-  }, 1000);
+      if (diff <= 0) {
+        clearInterval(interval);
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      } else {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+        setTimeLeft({ days, hours, minutes, seconds });
+      }
+    }, 1000);
 
-  return () => clearInterval(interval);
-}, []);
-
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Box
@@ -428,27 +420,8 @@ useEffect(() => {
               width: "100%",
               height: "100%",
             }}
-          >
-            {/* Overlay for readability removed */}
-          </Box>
+          />
         ))}
-        {/* Mobile Search Bar on Hero Section */}
-        <Box
-          sx={{
-            display: { xs: "flex", md: "none" },
-            position: "absolute",
-            top: 24,
-            left: 0,
-            right: 0,
-            px: 2,
-            zIndex: 10,
-            justifyContent: "center",
-          }}
-        >
-          <HeroSearchBar colorMode={mode} />
-        </Box>
-
-        {/* Slide Indicators */}
         <Box
           sx={{
             position: "absolute",
@@ -479,8 +452,6 @@ useEffect(() => {
             />
           ))}
         </Box>
-
-        {/* Scroll Indicator */}
         <Box
           onClick={scrollToContent}
           sx={{
@@ -506,446 +477,14 @@ useEffect(() => {
             },
             zIndex: 3,
           }}
-        ></Box>
+        />
       </Box>
 
       {/* Shop By Category */}
-      <Box
-        sx={{
-          pt: { xs: 4, md: 6 },
-          bgcolor: mode === "dark" ? "#181818" : "#fff",
-        }}
-      >
-        <Container maxWidth="xl">
-          <Typography
-            variant="h2"
-            sx={{
-              fontSize: { xs: "1.5rem", sm: "1.5rem", md: "2rem" },
-              fontWeight: 700,
-              textAlign: "center",
-              mb: { xs: 2, md: 3 },
-              position: "relative",
-              "&::after": {
-                content: '""',
-                position: "absolute",
-                bottom: -8,
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "60px",
-                height: "3px",
-                background: mode === "dark" ? "#fff" : "#000000",
-                borderRadius: "2px",
-              },
-            }}
-          >
-            SHOP BY CATEGORY
-          </Typography>
-          <Box
-            sx={{
-              display: { xs: "flex", md: "grid" },
-              gridTemplateColumns: { md: "repeat(5, 1fr)" },
-              gap: { xs: 2, md: 3 },
-              overflowX: { xs: "auto", md: "visible" },
-              pt: { xs: 3, md: 2 },
-              "&::-webkit-scrollbar": { display: "none" },
-              msOverflowStyle: "none",
-              scrollbarWidth: "none",
-            }}
-          >
-            {loading ? (
-              <Typography
-                variant="body1"
-                sx={{ textAlign: "center", width: "100%" }}
-              >
-                Loading products...
-              </Typography>
-            ) : error ? (
-              <Typography
-                variant="body1"
-                sx={{ textAlign: "center", width: "100%", color: "error.main" }}
-              >
-                {error}
-              </Typography>
-            ) : shopByCategory.length === 0 ? (
-              <Typography
-                variant="body1"
-                sx={{ textAlign: "center", width: "100%" }}
-              >
-                No products yet.
-              </Typography>
-            ) : (
-              <>
-                {shopByCategory.slice(0, 5).map((product) => (
-                  <Box
-                    key={product._id}
-                    sx={{
-                      flex: { xs: "0 0 50%", sm: "0 0 40%", md: "unset" },
-                      minWidth: { xs: "50%", sm: "40%", md: "unset" },
-                      maxWidth: { xs: "50%", sm: "40%", md: "unset" },
-                      display: "flex",
-                    }}
-                  >
-                    <Card
-                      elevation={0}
-                      sx={{
-                        borderRadius: 0,
-                        overflow: "hidden",
-                        cursor: "pointer",
-                        transition: "all 0.3s ease",
-                        minHeight: { xs: 240, md: 300 },
-                        width: "100%",
-                        "&:hover": {
-                          boxShadow: 4,
-                          transform: "translateY(-8px) scale(1.04)",
-                        },
-                      }}
-                      onClick={() => handleProductClick(product._id)}
-                    >
-                      <Box
-                        sx={{
-                          position: "relative",
-                          width: "100%",
-                          pt: "140%",
-                          overflow: "hidden",
-                        }}
-                      >
-                        <CardMedia
-                          component="img"
-                          image={
-                            product.image
-                              ? product.image.startsWith("http")
-                                ? product.image
-                                : `${buildApiUrl("")}/uploads/${product.image}`
-                              : "/images/placeholder.png"
-                          }
-                          alt={product.name}
-                          sx={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      </Box>
-                      <CardContent sx={{ textAlign: "center", p: 1.5 }}>
-                        <Typography
-                          variant="subtitle1"
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: { xs: "1.05rem", md: "1.18rem" },
-                          }}
-                        >
-                          {product.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          ₹{product.price}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Box>
-                ))}
-
-                {/* Show 'See More' card only on mobile if more than 5 products exist */}
-                {shopByCategory.length > 4 && (
-                  <Box
-                    sx={{
-                      flex: { xs: "0 0 50%", md: "unset" },
-                      minWidth: { xs: "50%", md: "unset" },
-                      maxWidth: { xs: "50%", md: "unset" },
-                      display: { xs: "flex", md: "none" },
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Card
-                      elevation={1}
-                      sx={{
-                        width: "100%",
-                        minHeight: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: mode === "dark" ? "#181818" : "#fff",
-                        color: mode === "dark" ? "#fff" : "#000",
-                        cursor: "pointer",
-                        "&:hover": {
-                          transform: "translateY(-2px)",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                        },
-                        transition: "all 0.3s ease",
-                        borderRadius: 0,
-                      }}
-                      onClick={() =>
-                        navigate("/products?sort=shop-by-category")
-                      }
-                    >
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        SEE MORE →
-                      </Typography>
-                    </Card>
-                  </Box>
-                )}
-              </>
-            )}
-          </Box>
-        </Container>
-      </Box>
-
-      {/* Best Sellers */}
-      <Box
-        sx={{
-          pt: { xs: 2, md: 6 },
-          bgcolor: mode === "dark" ? "#181818" : "#fff",
-        }}
-      >
-        <Container maxWidth="xl">
-          <Typography
-            variant="h2"
-            sx={{
-              fontSize: { xs: "1.5rem", sm: "1.5rem", md: "2rem" },
-              fontWeight: 700,
-              textAlign: "center",
-              mb: { xs: 5, md: 3 },
-              position: "relative",
-              "&::after": {
-                content: '""',
-                position: "absolute",
-                bottom: -8,
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "60px",
-                height: "3px",
-                background: mode === "dark" ? "#fff" : "#000000",
-                borderRadius: "2px",
-              },
-            }}
-          >
-            BEST SELLERS
-          </Typography>
-          <Box
-            sx={{
-              display: { xs: "flex", md: "grid" },
-              gridTemplateColumns: { md: "repeat(5, 1fr)" },
-              gap: { xs: 2, md: 3 },
-              overflowX: { xs: "auto", md: "visible" },
-          
-              "&::-webkit-scrollbar": { display: "none" },
-              msOverflowStyle: "none",
-              scrollbarWidth: "none",
-            }}
-          >
-            {loading ? (
-              <Typography
-                variant="body1"
-                sx={{ textAlign: "center", width: "100%" }}
-              >
-                Loading best sellers...
-              </Typography>
-            ) : error ? (
-              <Typography
-                variant="body1"
-                sx={{ textAlign: "center", width: "100%", color: "error.main" }}
-              >
-                {error}
-              </Typography>
-            ) : bestSellers.length === 0 ? (
-              <Typography
-                variant="body1"
-                sx={{ textAlign: "center", width: "100%" }}
-              >
-                No best sellers yet.
-              </Typography>
-            ) : (
-              <>
-                {bestSellers.slice(0, 5).map((product) => (
-                  <Box
-                    key={product._id}
-                    sx={{
-                      flex: { xs: "0 0 50%", md: "unset" },
-                      minWidth: { xs: "50%", md: "unset" },
-                      maxWidth: { xs: "50%", md: "unset" },
-                      p: 0,
-                      display: "flex",
-                    }}
-                  >
-                    <Card
-                      elevation={0}
-                      sx={{
-                        borderRadius: 0,
-                        overflow: "hidden",
-                        cursor: "pointer",
-                        transition: "all 0.3s ease",
-                        minHeight: { xs: 240, md: 300 },
-                        width: "100%",
-                        "&:hover": {
-                          boxShadow: 4,
-                          transform: "translateY(-8px) scale(1.04)",
-                        },
-                      }}
-                      onClick={() => handleProductClick(product._id)}
-                    >
-                      <Box
-                        sx={{
-                          position: "relative",
-                          width: "100%",
-                          pt: "140%",
-                          overflow: "hidden",
-                        }}
-                      >
-                        <CardMedia
-                          component="img"
-                          image={
-                            product.image
-                              ? product.image.startsWith("http")
-                                ? product.image
-                                : `${buildApiUrl("")}/uploads/${product.image}`
-                              : "/images/placeholder.png"
-                          }
-                          alt={product.name}
-                          sx={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      </Box>
-                      <CardContent sx={{ textAlign: "center", p: 1.5 }}>
-                        <Typography
-                          variant="subtitle1"
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: { xs: "1.05rem", md: "1.18rem" },
-                          }}
-                        >
-                          {product.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          ₹{product.price}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Box>
-                ))}
-
-                {/* SEE MORE as scrollable card on mobile only */}
-                {bestSellers.length > 4 && (
-                  <Box
-                    sx={{
-                      flex: { xs: "0 0 50%", md: "unset" },
-                      minWidth: { xs: "50%", md: "unset" },
-                      maxWidth: { xs: "50%", md: "unset" },
-                      display: { xs: "flex", md: "none" },
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Card
-                      elevation={1}
-                      sx={{
-                        width: "100%",
-                        minHeight: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                       backgroundColor: mode === "dark" ? "#181818" : "#fff",
-                        color: mode === "dark" ? "#fff" : "#000",
-                        cursor: "pointer",
-                        "&:hover": {
-                          transform: "translateY(-2px)",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                        },
-                        transition: "all 0.3s ease",
-                        borderRadius: 0,
-                      }}
-                      onClick={() => navigate("/products?sort=best-sellers")}
-                    >
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        SEE MORE →
-                      </Typography>
-                    </Card>
-                  </Box>
-                )}
-              </>
-            )}
-          </Box>
-
-          {/* SEE MORE button centered below for desktop */}
-          {bestSellers.length > 5 && (
-            <Box
-              sx={{
-                display: { xs: "none", md: "flex" },
-                justifyContent: "center",
-                mt: 2,
-              }}
-            >
-              <Button
-                variant="contained"
-                size="medium"
-                sx={{
-                 
-                  py: 1,
-                  px: 4,
-                  fontSize: "0.9rem",
-                  borderRadius: 10,
-                  backgroundColor: mode === "dark" ? "#181818" : "#fff",
-                        color: mode === "dark" ? "#fff" : "#000",
-                        cursor: "pointer",
-                        "&:hover": {
-                          transform: "translateY(-2px)",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                        },
-                  transition: "all 0.3s ease",
-                  whiteSpace: "nowrap",
-                }}
-                onClick={() => navigate("/products?sort=best-sellers")}
-              >
-                SEE MORE
-              </Button>
-            </Box>
-          )}
-        </Container>
-      </Box>
-
-      {/* Sectioned Collections */}
-      {[
-        {
-          name: "T-SHIRTS",
-          key: "t-shirts",
-          image: "/images/category1Desktip.png",
-        },
-        { name: "SHIRTS", key: "shirts", image: "/images/shirts.png" },
-        {
-          name: "OVERSIZED T-SHIRTS",
-          key: "oversized-t-shirts",
-          image: "/images/oversized-tshirts.png",
-        },
-        {
-          name: "BOTTOM WEAR",
-          key: "bottom-wear",
-          image: "/images/bottom-wear.png",
-        },
-        {
-          name: "CARGO PANTS",
-          key: "cargo-pants",
-          image: "/images/cargo-pants.png",
-        },
-        { name: "JACKETS", key: "jackets", image: "/images/jackets.png" },
-        { name: "HOODIES", key: "hoodies", image: "/images/hoodies.png" },
-        {
-          name: "CO-ORD SETS",
-          key: "co-ord-sets",
-          image: "/images/co-ord-sets.png",
-        },
-      ].map((section, idx) => (
+      {shopByCategory.length > 0 && (
         <Box
-          key={section.key}
-          ref={sectionRefs[section.key]}
           sx={{
+            pt: { xs: 4, md: 6 },
             bgcolor: mode === "dark" ? "#181818" : "#fff",
           }}
         >
@@ -956,10 +495,8 @@ useEffect(() => {
                 fontSize: { xs: "1.5rem", sm: "1.5rem", md: "2rem" },
                 fontWeight: 700,
                 textAlign: "center",
-                py: { xs: 3, md: 2 },
+                mb: { xs: 2, md: 3 },
                 position: "relative",
-                letterSpacing: "-0.02em",
-                color: mode === "dark" ? "#fff" : "#181818",
                 "&::after": {
                   content: '""',
                   position: "absolute",
@@ -973,603 +510,50 @@ useEffect(() => {
                 },
               }}
             >
-              {section.name}
+              SHOP BY CATEGORY
             </Typography>
             <Box
               sx={{
-              
-                position: "relative",
-                width: "100%",
-                overflow: "hidden",
-               
-              }}
-            >
-              {section.key === "t-shirts" ? (
-                <>
-                 <div className="">
-                <Box
-  sx={{
-    height: {
-      xs: "120px",  // screen < md
-      md: "100%",   // screen ≥ md
-    },
-    width: "100%",
-    overflow: "hidden",
-  }}
->
-  <img
-    src={isMobile ? "/images/1.png" : section.image}
-    alt={section.name}
-    style={{
-      width: "100%",
-      height: "100%",
-      objectFit: "cover",
-      objectPosition: "top",
-      display: "block",
-      borderRadius: isMobile ? "8px" : "10px",
-    }}
-    onClick={() =>
-      navigate(`/products?category=${encodeURIComponent(section.key)}`)
-    }
-  />
-</Box>
-
-
-
-                 </div>
-                  {/* <Button
-                    size={isMobile ? "small" : "large"}
-                    sx={{
-                      position: "absolute",
-                      left: getButtonPosition(section.key, isMobile).left,
-                      top: getButtonPosition(section.key, isMobile).top,
-                      transform: "translate(-50%, -90%)",
-                      backgroundColor: matteColors[900],
-                      color: "white",
-                      fontSize: { xs: "0.92rem", md: "1.15rem" },
-                      px: { xs: 2, md: 5 },
-                      borderRadius: { xs: 4, md: 6 },
-                      width: "auto",
-                      minWidth: 0,
-                      "&:hover": {
-                        backgroundColor: matteColors[800],
-                        boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-                      },
-                      transition: "all 0.3s ease",
-                      alignSelf: "center",
-                      whiteSpace: "nowrap",
-                      zIndex: 2,
-                    }}
-                    onClick={() =>
-                      navigate(
-                        `/products?category=${encodeURIComponent(section.key)}`
-                      )
-                    }
-                  >
-                    SHOP ALL
-                  </Button> */}
-                </>
-              ) : section.key === "shirts" ? (
-                <>
-  
-                  <Box
-  sx={{
-    height: {
-      xs: "120px",  // screen < md
-      md: "100%",   // screen ≥ md
-    },
-    width: "100%",
-    overflow: "hidden",
-  }}
->
-  <img
-    src={isMobile ? "/images/2.png" : section.image}
-    alt={section.name}
-    style={{
-      width: "100%",
-      height: "100%",
-      objectFit: "cover",
-      objectPosition: "top",
-      display: "block",
-      borderRadius: isMobile ? "8px" : "10px",
-    }}
-    onClick={() =>
-      navigate(`/products?category=${encodeURIComponent(section.key)}`)
-    }
-  />
-</Box>
-                  {/* <Button
-                    size={isMobile ? "medium" : "large"}
-                    sx={{
-                      position: "absolute",
-                      left: getButtonPosition(section.key, isMobile).left,
-                      top: getButtonPosition(section.key, isMobile).top,
-                      transform: "translate(-50%, -50%)",
-                      backgroundColor: matteColors[900],
-                      color: "white",
-                      fontSize: { xs: "0.92rem", md: "1.15rem" },
-                   
-                      px: { xs: 2, md: 5 },
-                      borderRadius: { xs: 8, md: 10 },
-                      width: "auto",
-                      minWidth: 0,
-                      "&:hover": {
-                        backgroundColor: matteColors[800],
-                        transform: "translate(-50%, -52%)",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      },
-                      transition: "all 0.3s ease",
-                      alignSelf: "center",
-                      whiteSpace: "nowrap",
-                      zIndex: 2,
-                    }}
-                    onClick={() =>
-                      navigate(
-                        `/products?category=${encodeURIComponent(section.key)}`
-                      )
-                    }
-                  >
-                    SHOP ALL
-                  </Button> */}
-                </>
-              ) : section.key === "oversized-t-shirts" ? (
-                <>
-                 <Box
-  sx={{
-    height: {
-      xs: "120px",  // screen < md
-      md: "100%",   // screen ≥ md
-    },
-    width: "100%",
-    overflow: "hidden",
-  }}
->
-  <img
-    src={isMobile ? "/images/3.png" : section.image}
-    alt={section.name}
-    style={{
-      width: "100%",
-      height: "100%",
-      objectFit: "cover",
-      objectPosition: "top",
-      display: "block",
-      borderRadius: isMobile ? "8px" : "10px",
-    }}
-    onClick={() =>
-      navigate(`/products?category=${encodeURIComponent(section.key)}`)
-    }
-  />
-</Box>
-                  {/* <Button
-                    size={isMobile ? "medium" : "large"}
-                    sx={{
-                      position: "absolute",
-                      left: getButtonPosition(section.key, isMobile).left,
-                      top: getButtonPosition(section.key, isMobile).top,
-                      transform: "translate(-50%, -50%)",
-                      backgroundColor: matteColors[900],
-                      color: "white",
-                      fontSize: { xs: "0.92rem", md: "1.15rem" },
-                    
-                      px: { xs: 2, md: 5 },
-                      borderRadius: { xs: 8, md: 10 },
-                      width: "auto",
-                      minWidth: 0,
-                      "&:hover": {
-                        backgroundColor: matteColors[800],
-                        transform: "translate(-50%, -52%)",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      },
-                      transition: "all 0.3s ease",
-                      alignSelf: "center",
-                      whiteSpace: "nowrap",
-                      zIndex: 2,
-                    }}
-                    onClick={() =>
-                      navigate(
-                        `/products?category=${encodeURIComponent(section.key)}`
-                      )
-                    }
-                  >
-                    SHOP ALL
-                  </Button> */}
-                </>
-              ) : section.key === "bottom-wear" ? (
-                <>
-                  <Box
-  sx={{
-    height: {
-      xs: "120px",  // screen < md
-      md: "100%",   // screen ≥ md
-    },
-    width: "100%",
-    overflow: "hidden",
-  }}
->
-  <img
-    src={isMobile ? "/images/4.png" : section.image}
-    alt={section.name}
-    style={{
-      width: "100%",
-      height: "100%",
-      objectFit: "cover",
-      objectPosition: "top",
-      display: "block",
-      borderRadius: isMobile ? "8px" : "10px",
-    }}
-    onClick={() =>
-      navigate(`/products?category=${encodeURIComponent(section.key)}`)
-    }
-  />
-</Box>
-                  {/* <Button
-                    size={isMobile ? "medium" : "large"}
-                    sx={{
-                      position: "absolute",
-                      left: getButtonPosition(section.key, isMobile).left,
-                      top: getButtonPosition(section.key, isMobile).top,
-                      transform: "translate(-50%, -50%)",
-                      backgroundColor: matteColors[900],
-                      color: "white",
-                      fontSize: { xs: "0.92rem", md: "1.15rem" },
-                   
-                      px: { xs: 2, md: 5 },
-                      borderRadius: { xs: 8, md: 10 },
-                      width: "auto",
-                      minWidth: 0,
-                      "&:hover": {
-                        backgroundColor: matteColors[800],
-                        transform: "translate(-50%, -52%)",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      },
-                      transition: "all 0.3s ease",
-                      alignSelf: "center",
-                      whiteSpace: "nowrap",
-                      zIndex: 2,
-                    }}
-                    onClick={() =>
-                      navigate(
-                        `/products?category=${encodeURIComponent(section.key)}`
-                      )
-                    }
-                  >
-                    SHOP ALL
-                  </Button> */}
-                </>
-              ) : section.key === "cargo-pants" ? (
-                <>
-                   <Box
-  sx={{
-    height: {
-      xs: "120px",  // screen < md
-      md: "100%",   // screen ≥ md
-    },
-    width: "100%",
-    overflow: "hidden",
-  }}
->
-  <img
-    src={isMobile ? "/images/5.png" : section.image}
-    alt={section.name}
-    style={{
-      width: "100%",
-      height: "100%",
-      objectFit: "cover",
-      objectPosition: "top",
-      display: "block",
-      borderRadius: isMobile ? "8px" : "10px",
-    }}
-    onClick={() =>
-      navigate(`/products?category=${encodeURIComponent(section.key)}`)
-    }
-  />
-</Box>
-                  {/* <Button
-                    size={isMobile ? "medium" : "large"}
-                    sx={{
-                      position: "absolute",
-                      left: getButtonPosition(section.key, isMobile).left,
-                      top: getButtonPosition(section.key, isMobile).top,
-                      transform: "translate(-50%, -50%)",
-                      backgroundColor: matteColors[900],
-                      color: "white",
-                      fontSize: { xs: "0.92rem", md: "1.15rem" },
-                    
-                      px: { xs: 2, md: 5 },
-                      borderRadius: { xs: 8, md: 10 },
-                      width: "auto",
-                      minWidth: 0,
-                      "&:hover": {
-                        backgroundColor: matteColors[800],
-                        transform: "translate(-50%, -52%)",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      },
-                      transition: "all 0.3s ease",
-                      alignSelf: "center",
-                      whiteSpace: "nowrap",
-                      zIndex: 2,
-                    }}
-                    onClick={() =>
-                      navigate(
-                        `/products?category=${encodeURIComponent(section.key)}`
-                      )
-                    }
-                  >
-                    SHOP ALL
-                  </Button> */}
-                </>
-              ) : section.key === "jackets" ? (
-                <>
-                 <Box
-  sx={{
-    height: {
-      xs: "120px",  // screen < md
-      md: "100%",   // screen ≥ md
-    },
-    width: "100%",
-    overflow: "hidden",
-  }}
->
-  <img
-    src={isMobile ? "/images/6.png" : section.image}
-    alt={section.name}
-    style={{
-      width: "100%",
-      height: "100%",
-      objectFit: "cover",
-      objectPosition: "top",
-      display: "block",
-      borderRadius: isMobile ? "8px" : "10px",
-    }}
-    onClick={() =>
-      navigate(`/products?category=${encodeURIComponent(section.key)}`)
-    }
-  />
-</Box>
-                  {/* <Button
-                    size={isMobile ? "medium" : "large"}
-                    sx={{
-                      position: "absolute",
-                      left: getButtonPosition(section.key, isMobile).left,
-                      top: getButtonPosition(section.key, isMobile).top,
-                      transform: "translate(-50%, -50%)",
-                      backgroundColor: matteColors[900],
-                      color: "white",
-                      fontSize: { xs: "0.92rem", md: "1.15rem" },
-                      
-                      px: { xs: 2, md: 5 },
-                      borderRadius: { xs: 8, md: 10 },
-                      width: "auto",
-                      minWidth: 0,
-                      "&:hover": {
-                        backgroundColor: matteColors[800],
-                        transform: "translate(-50%, -52%)",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      },
-                      transition: "all 0.3s ease",
-                      alignSelf: "center",
-                      whiteSpace: "nowrap",
-                      zIndex: 2,
-                    }}
-                    onClick={() =>
-                      navigate(
-                        `/products?category=${encodeURIComponent(section.key)}`
-                      )
-                    }
-                  >
-                    SHOP ALL
-                  </Button> */}
-                </>
-              ) : section.key === "hoodies" ? (
-                <>
-                 <Box
-  sx={{
-    height: {
-      xs: "120px",  // screen < md
-      md: "100%",   // screen ≥ md
-    },
-    width: "100%",
-    overflow: "hidden",
-  }}
->
-  <img
-    src={isMobile ? "/images/7.png" : section.image}
-    alt={section.name}
-    style={{
-      width: "100%",
-      height: "100%",
-      objectFit: "cover",
-      objectPosition: "top",
-      display: "block",
-      borderRadius: isMobile ? "8px" : "10px",
-    }}
-    onClick={() =>
-      navigate(`/products?category=${encodeURIComponent(section.key)}`)
-    }
-  />
-</Box>
-                  {/* <Button
-                    size={isMobile ? "medium" : "large"}
-                    sx={{
-                      position: "absolute",
-                      left: getButtonPosition(section.key, isMobile).left,
-                      top: getButtonPosition(section.key, isMobile).top,
-                      transform: "translate(-50%, -50%)",
-                      backgroundColor: matteColors[900],
-                      color: "white",
-                      fontSize: { xs: "0.92rem", md: "1.15rem" },
-                    
-                      px: { xs: 2, md: 5 },
-                      borderRadius: { xs: 8, md: 10 },
-                      width: "auto",
-                      minWidth: 0,
-                      "&:hover": {
-                        backgroundColor: matteColors[800],
-                        transform: "translate(-50%, -52%)",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      },
-                      transition: "all 0.3s ease",
-                      alignSelf: "center",
-                      whiteSpace: "nowrap",
-                      zIndex: 2,
-                    }}
-                    onClick={() =>
-                      navigate(
-                        `/products?category=${encodeURIComponent(section.key)}`
-                      )
-                    }
-                  >
-                    SHOP ALL
-                  </Button> */}
-                </>
-              ) : section.key === "co-ord-sets" ? (
-                <>
-                 <Box
-  sx={{
-    height: {
-      xs: "120px",  // screen < md
-      md: "100%",   // screen ≥ md
-    },
-    width: "100%",
-    overflow: "hidden",
-  }}
->
-  <img
-    src={isMobile ? "/images/8.png" : section.image}
-    alt={section.name}
-    style={{
-      width: "100%",
-      height: "100%",
-      objectFit: "cover",
-      objectPosition: "top",
-      display: "block",
-      borderRadius: isMobile ? "8px" : "10px",
-    }}
-    onClick={() =>
-      navigate(`/products?category=${encodeURIComponent(section.key)}`)
-    }
-  />
-</Box>
-                  {/* <Button
-                    size={isMobile ? "medium" : "large"}
-                    sx={{
-                      position: "absolute",
-                      left: getButtonPosition(section.key, isMobile).left,
-                      top: getButtonPosition(section.key, isMobile).top,
-                      transform: "translate(-50%, -50%)",
-                      backgroundColor: matteColors[900],
-                      color: "white",
-                      fontSize: { xs: "0.92rem", md: "1.15rem" },
-                      
-                      px: { xs: 2, md: 5 },
-                      borderRadius: { xs: 8, md: 10 },
-                      width: "auto",
-                      minWidth: 0,
-                      "&:hover": {
-                        backgroundColor: matteColors[800],
-                        transform: "translate(-50%, -52%)",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      },
-                      transition: "all 0.3s ease",
-                      alignSelf: "center",
-                      whiteSpace: "nowrap",
-                      zIndex: 2,
-                    }}
-                    onClick={() =>
-                      navigate(
-                        `/products?category=${encodeURIComponent(section.key)}`
-                      )
-                    }
-                  >
-                    SHOP ALL
-                  </Button> */}
-                </>
-              ) : (
-                <img
-                  src={section.image}
-                  alt={section.name}
-                  style={{
-                    width: "100%",
-                    height: isMobile ? "130px" : "320px",
-                    objectFit: "inherit",
-                    display: "block",
-                  }}
-                />
-              )}
-            </Box>
-            <Box
-              sx={{
-                mt: 1.5,
                 display: { xs: "flex", md: "grid" },
                 gridTemplateColumns: { md: "repeat(5, 1fr)" },
-                gap: { xs: 0.5, md: 3 },
+                gap: { xs: 2, md: 3 },
                 overflowX: { xs: "auto", md: "visible" },
-              
+                pt: { xs: 3, md: 2 },
                 "&::-webkit-scrollbar": { display: "none" },
                 msOverflowStyle: "none",
                 scrollbarWidth: "none",
               }}
             >
-              {(() => {
-                switch (section.key) {
-                  case "t-shirts":
-                    categoryProducts = tShirts;
-                    break;
-                  case "shirts":
-                    categoryProducts = shirts;
-                    break;
-                  case "oversized-t-shirts":
-                    categoryProducts = oversizedTShirts;
-                    break;
-                  case "bottom-wear":
-                    categoryProducts = bottomWear;
-                    break;
-                  case "cargo-pants":
-                    categoryProducts = cargoPants;
-                    break;
-                  case "jackets":
-                    categoryProducts = jackets;
-                    break;
-                  case "hoodies":
-                    categoryProducts = hoodies;
-                    break;
-                  case "co-ord-sets":
-                    categoryProducts = coOrdSets;
-                    break;
-                  default:
-                    categoryProducts = [];
-                }
-
-                if (loading) {
-                  return (
-                    <Typography
-                      variant="body1"
-                      sx={{ textAlign: "center", width: "100%" }}
-                    >
-                      Loading {section.name.toLowerCase()}...
-                    </Typography>
-                  );
-                }
-
-                if (categoryProducts.length === 0) {
-                  return (
-                    <Typography
-                      variant="body1"
-                      sx={{ textAlign: "center",pb:6, width: "100%" }}
-                    >
-                      No {section.name.toLowerCase()} available yet.
-                    </Typography>
-                  );
-                }
-
-                return categoryProducts.slice(0, 5).map((product, index) => {
-                  return (
+              {loading ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    width: "100%",
+                  }}
+                >
+                  <CircularProgress />
+                </Box>
+              ) : error ? (
+                <Typography
+                  variant="body1"
+                  sx={{
+                    textAlign: "center",
+                    width: "100%",
+                    color: "error.main",
+                  }}
+                >
+                  {error}
+                </Typography>
+              ) : (
+                <>
+                  {shopByCategory.slice(0, 5).map((product) => (
                     <Box
-                      key={product._id || index}
+                      key={product._id}
                       sx={{
-                        flex: { xs: "0 0 50%", md: "unset" },
-                        minWidth: { xs: "50%", md: "unset" },
-                        maxWidth: { xs: "50%", md: "unset" },
+                        flex: { xs: "0 0 50%", sm: "0 0 40%", md: "unset" },
+                        minWidth: { xs: "50%", sm: "40%", md: "unset" },
+                        maxWidth: { xs: "50%", sm: "40%", md: "unset" },
                         display: "flex",
                       }}
                     >
@@ -1580,7 +564,6 @@ useEffect(() => {
                           overflow: "hidden",
                           cursor: "pointer",
                           transition: "all 0.3s ease",
-
                           minHeight: { xs: 240, md: 300 },
                           width: "100%",
                           "&:hover": {
@@ -1594,13 +577,21 @@ useEffect(() => {
                           sx={{
                             position: "relative",
                             width: "100%",
-                            pt: "160%",
+                            pt: "140%",
                             overflow: "hidden",
                           }}
                         >
                           <CardMedia
                             component="img"
-                            image={product.image}
+                            image={
+                              product.image
+                                ? product.image.startsWith("http")
+                                  ? product.image
+                                  : `${buildApiUrl("")}/Uploads/${
+                                      product.image
+                                    }`
+                                : "/images/placeholder.png"
+                            }
                             alt={product.name}
                             sx={{
                               position: "absolute",
@@ -1609,110 +600,580 @@ useEffect(() => {
                               width: "100%",
                               height: "100%",
                               objectFit: "cover",
-                              transition: "transform 0.3s ease-in-out",
                             }}
                           />
                         </Box>
-                        <CardContent sx={{ textAlign: "center", p: 1 }}>
+                        <CardContent sx={{ textAlign: "center", p: 1.5 }}>
                           <Typography
                             variant="subtitle1"
-                            sx={{ fontWeight: 600 }}
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: { xs: "1.05rem", md: "1.18rem" },
+                            }}
                           >
                             {product.name}
                           </Typography>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "center",
-                              gap: 0.7,
-                              my: 1,
-                            }}
-                          >
-                            {product.colors &&
-                              product.colors.slice(0, 3).map((color, idx) => (
-                                <Box
-                                  key={idx}
-                                  sx={{
-                                    width: 18,
-                                    height: 18,
-                                    borderRadius: "50%",
-                                    background: color,
-                                    border: "1.5px solid #eee",
-                                    boxShadow: "0 1px 2px rgba(0,0,0,0.07)",
-                                  }}
-                                />
-                              ))}
-                          </Box>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{
-                              fontSize: {
-                                xs: "0.82rem",
-                                sm: "0.92rem",
-                                md: "1rem",
-                              },
-                            }}
-                          >
+                          <Typography variant="body2" color="text.secondary">
                             ₹{product.price}
                           </Typography>
                         </CardContent>
                       </Card>
                     </Box>
-                    
-                  );
-                  
-                });
-              })()}
-               {categoryProducts.length > 5 && (
-
-
- <Box
-                    sx={{
-                      flex: { xs: "0 0 50%", md: "unset" },
-                      minWidth: { xs: "50%", md: "unset" },
-                      maxWidth: { xs: "50%", md: "unset" },
-                      display: { xs: "flex", md: "none" },
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Card
-                      elevation={1}
+                  ))}
+                  {shopByCategory.length > 4 && (
+                    <Box
                       sx={{
-                        width: "100%",
-                        minHeight: "100%",
-                        display: "flex",
+                        flex: { xs: "0 0 50%", md: "unset" },
+                        minWidth: { xs: "50%", md: "unset" },
+                        maxWidth: { xs: "50%", md: "unset" },
+                        display: { xs: "flex", md: "none" },
                         alignItems: "center",
                         justifyContent: "center",
-                       backgroundColor: mode === "dark" ? "#181818" : "#fff",
-                        color: mode === "dark" ? "#fff" : "#000",
-                        cursor: "pointer",
-                        "&:hover": {
-                          transform: "translateY(-2px)",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                        },
-                        transition: "all 0.3s ease",
-                        borderRadius: 0,
                       }}
-                        onClick={() => navigate(
-                      `/products?category=${encodeURIComponent(section.key)}`
-                    )}
                     >
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        SEE MORE →
-                      </Typography>
-                    </Card>
-                  </Box>
-
-
-            )}
+                      <Card
+                        elevation={1}
+                        sx={{
+                          width: "100%",
+                          minHeight: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: mode === "dark" ? "#181818" : "#fff",
+                          color: mode === "dark" ? "#fff" : "#000",
+                          cursor: "pointer",
+                          "&:hover": {
+                            transform: "translateY(-2px)",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                          },
+                          transition: "all 0.3s ease",
+                          borderRadius: 0,
+                        }}
+                        onClick={() =>
+                          navigate("/products?sort=shop-by-category")
+                        }
+                      >
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          SEE MORE →
+                        </Typography>
+                      </Card>
+                    </Box>
+                  )}
+                </>
+              )}
             </Box>
-
-           
           </Container>
         </Box>
-      ))}
+      )}
+
+      {/* Best Sellers */}
+      {bestSellers.length > 0 && (
+        <Box
+          sx={{
+            pt: { xs: 2, md: 6 },
+            bgcolor: mode === "dark" ? "#181818" : "#fff",
+          }}
+        >
+          <Container maxWidth="xl">
+            <Typography
+              variant="h2"
+              sx={{
+                fontSize: { xs: "1.5rem", sm: "1.5rem", md: "2rem" },
+                fontWeight: 700,
+                textAlign: "center",
+                mb: { xs: 5, md: 3 },
+                position: "relative",
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  bottom: -8,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "60px",
+                  height: "3px",
+                  background: mode === "dark" ? "#fff" : "#000000",
+                  borderRadius: "2px",
+                },
+              }}
+            >
+              BEST SELLERS
+            </Typography>
+            <Box
+              sx={{
+                display: { xs: "flex", md: "grid" },
+                gridTemplateColumns: { md: "repeat(5, 1fr)" },
+                gap: { xs: 2, md: 3 },
+                overflowX: { xs: "auto", md: "visible" },
+                "&::-webkit-scrollbar": { display: "none" },
+                msOverflowStyle: "none",
+                scrollbarWidth: "none",
+              }}
+            >
+              {loading ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    width: "100%",
+                  }}
+                >
+                  <CircularProgress />
+                </Box>
+              ) : error ? (
+                <Typography
+                  variant="body1"
+                  sx={{
+                    textAlign: "center",
+                    width: "100%",
+                    color: "error.main",
+                  }}
+                >
+                  {error}
+                </Typography>
+              ) : (
+                <>
+                  {bestSellers.slice(0, 5).map((product) => (
+                    <Box
+                      key={product._id}
+                      sx={{
+                        flex: { xs: "0 0 50%", md: "unset" },
+                        minWidth: { xs: "50%", md: "unset" },
+                        maxWidth: { xs: "50%", md: "unset" },
+                        p: 0,
+                        display: "flex",
+                      }}
+                    >
+                      <Card
+                        elevation={0}
+                        sx={{
+                          borderRadius: 0,
+                          overflow: "hidden",
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          minHeight: { xs: 240, md: 300 },
+                          width: "100%",
+                          "&:hover": {
+                            boxShadow: 4,
+                            transform: "translateY(-8px) scale(1.04)",
+                          },
+                        }}
+                        onClick={() => handleProductClick(product._id)}
+                      >
+                        <Box
+                          sx={{
+                            position: "relative",
+                            width: "100%",
+                            pt: "140%",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <CardMedia
+                            component="img"
+                            image={
+                              product.image
+                                ? product.image.startsWith("http")
+                                  ? product.image
+                                  : `${buildApiUrl("")}/Uploads/${
+                                      product.image
+                                    }`
+                                : "/images/placeholder.png"
+                            }
+                            alt={product.name}
+                            sx={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        </Box>
+                        <CardContent sx={{ textAlign: "center", p: 1.5 }}>
+                          <Typography
+                            variant="subtitle1"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: { xs: "1.05rem", md: "1.18rem" },
+                            }}
+                          >
+                            {product.name}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            ₹{product.price}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Box>
+                  ))}
+                  {bestSellers.length > 4 && (
+                    <Box
+                      sx={{
+                        flex: { xs: "0 0 50%", md: "unset" },
+                        minWidth: { xs: "50%", md: "unset" },
+                        maxWidth: { xs: "50%", md: "unset" },
+                        display: { xs: "flex", md: "none" },
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Card
+                        elevation={1}
+                        sx={{
+                          width: "100%",
+                          minHeight: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: mode === "dark" ? "#181818" : "#fff",
+                          color: mode === "dark" ? "#fff" : "#000",
+                          cursor: "pointer",
+                          "&:hover": {
+                            transform: "translateY(-2px)",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                          },
+                          transition: "all 0.3s ease",
+                          borderRadius: 0,
+                        }}
+                        onClick={() => navigate("/products?sort=best-sellers")}
+                      >
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          SEE MORE →
+                        </Typography>
+                      </Card>
+                    </Box>
+                  )}
+                </>
+              )}
+            </Box>
+            {bestSellers.length > 5 && (
+              <Box
+                sx={{
+                  display: { xs: "none", md: "flex" },
+                  justifyContent: "center",
+                  mt: 2,
+                }}
+              >
+                <Button
+                  variant="contained"
+                  size="medium"
+                  sx={{
+                    py: 1,
+                    px: 4,
+                    fontSize: "0.9rem",
+                    borderRadius: 10,
+                    backgroundColor: mode === "dark" ? "#181818" : "#fff",
+                    color: mode === "dark" ? "#fff" : "#000",
+                    cursor: "pointer",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    },
+                    transition: "all 0.3s ease",
+                    whiteSpace: "nowrap",
+                  }}
+                  onClick={() => navigate("/products?sort=best-sellers")}
+                >
+                  SEE MORE
+                </Button>
+              </Box>
+            )}
+          </Container>
+        </Box>
+      )}
+
+      {/* Sectioned Collections */}
+      {[
+        {
+          name: "T-SHIRTS",
+          key: "t-shirts",
+          image: "/images/category1Desktip.png",
+          products: tShirts,
+        },
+        {
+          name: "SHIRTS",
+          key: "shirts",
+          image: "/images/shirts.png",
+          products: shirts,
+        },
+        {
+          name: "OVERSIZED T-SHIRTS",
+          key: "oversized-t-shirts",
+          image: "/images/oversized-tshirts.png",
+          products: oversizedTShirts,
+        },
+        {
+          name: "BOTTOM WEAR",
+          key: "bottom-wear",
+          image: "/images/bottom-wear.png",
+          products: bottomWear,
+        },
+        {
+          name: "CARGO PANTS",
+          key: "cargo-pants",
+          image: "/images/cargo-pants.png",
+          products: cargoPants,
+        },
+        {
+          name: "JACKETS",
+          key: "jackets",
+          image: "/images/jackets.png",
+          products: jackets,
+        },
+        {
+          name: "HOODIES",
+          key: "hoodies",
+          image: "/images/hoodies.png",
+          products: hoodies,
+        },
+        {
+          name: "CO-ORD SETS",
+          key: "co-ord-sets",
+          image: "/images/co-ord-sets.png",
+          products: coOrdSets,
+        },
+      ].map(
+        (section, idx) =>
+          section.products.length > 0 && (
+            <Box
+              key={section.key}
+              ref={sectionRefs[section.key]}
+              sx={{
+                bgcolor: mode === "dark" ? "#181818" : "#fff",
+              }}
+            >
+              <Container maxWidth="xl">
+                <Typography
+                  variant="h2"
+                  sx={{
+                    fontSize: { xs: "1.5rem", sm: "1.5rem", md: "2rem" },
+                    fontWeight: 700,
+                    textAlign: "center",
+                    py: { xs: 3, md: 2 },
+                    position: "relative",
+                    letterSpacing: "-0.02em",
+                    color: mode === "dark" ? "#fff" : "#181818",
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      bottom: -8,
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      width: "60px",
+                      height: "3px",
+                      background: mode === "dark" ? "#fff" : "#000000",
+                      borderRadius: "2px",
+                    },
+                  }}
+                >
+                  {section.name}
+                </Typography>
+                <Box
+                  sx={{
+                    position: "relative",
+                    width: "100%",
+                    overflow: "hidden",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      height: {
+                        xs: "120px",
+                        md: "100%",
+                      },
+                      width: "100%",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <img
+                      src={isMobile ? `/images/${idx + 1}.png` : section.image}
+                      alt={section.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        objectPosition: "top",
+                        display: "block",
+                        borderRadius: isMobile ? "8px" : "10px",
+                      }}
+                      onClick={() =>
+                        navigate(
+                          `/products?category=${encodeURIComponent(
+                            section.key
+                          )}`
+                        )
+                      }
+                    />
+                  </Box>
+                </Box>
+                <Box
+                  sx={{
+                    mt: 1.5,
+                    display: { xs: "flex", md: "grid" },
+                    gridTemplateColumns: { md: "repeat(5, 1fr)" },
+                    gap: { xs: 0.5, md: 3 },
+                    overflowX: { xs: "auto", md: "visible" },
+                    "&::-webkit-scrollbar": { display: "none" },
+                    msOverflowStyle: "none",
+                    scrollbarWidth: "none",
+                  }}
+                >
+                  {loading ? (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        width: "100%",
+                      }}
+                    >
+                      <CircularProgress />
+                    </Box>
+                  ) : (
+                    section.products.slice(0, 5).map((product, index) => (
+                      <Box
+                        key={product._id || index}
+                        sx={{
+                          flex: { xs: "0 0 50%", md: "unset" },
+                          minWidth: { xs: "50%", md: "unset" },
+                          maxWidth: { xs: "50%", md: "unset" },
+                          display: "flex",
+                        }}
+                      >
+                        <Card
+                          elevation={0}
+                          sx={{
+                            borderRadius: 0,
+                            overflow: "hidden",
+                            cursor: "pointer",
+                            transition: "all 0.3s ease",
+                            minHeight: { xs: 240, md: 300 },
+                            width: "100%",
+                            "&:hover": {
+                              boxShadow: 4,
+                              transform: "translateY(-8px) scale(1.04)",
+                            },
+                          }}
+                          onClick={() => handleProductClick(product._id)}
+                        >
+                          <Box
+                            sx={{
+                              position: "relative",
+                              width: "100%",
+                              pt: "160%",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <CardMedia
+                              component="img"
+                              image={product.image}
+                              alt={product.name}
+                              sx={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                transition: "transform 0.3s ease-in-out",
+                              }}
+                            />
+                          </Box>
+                          <CardContent sx={{ textAlign: "center", p: 1 }}>
+                            <Typography
+                              variant="subtitle1"
+                              sx={{ fontWeight: 600 }}
+                            >
+                              {product.name}
+                            </Typography>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "center",
+                                gap: 0.7,
+                                my: 1,
+                              }}
+                            >
+                              {product.colors &&
+                                product.colors.slice(0, 3).map((color, idx) => (
+                                  <Box
+                                    key={idx}
+                                    sx={{
+                                      width: 18,
+                                      height: 18,
+                                      borderRadius: "50%",
+                                      background: color,
+                                      border: "1.5px solid #eee",
+                                      boxShadow: "0 1px 2px rgba(0,0,0,0.07)",
+                                    }}
+                                  />
+                                ))}
+                            </Box>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{
+                                fontSize: {
+                                  xs: "0.82rem",
+                                  sm: "0.92rem",
+                                  md: "1rem",
+                                },
+                              }}
+                            >
+                              ₹{product.price}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Box>
+                    ))
+                  )}
+                  {section.products.length > 5 && (
+                    <Box
+                      sx={{
+                        flex: { xs: "0 0 50%", md: "unset" },
+                        minWidth: { xs: "50%", md: "unset" },
+                        maxWidth: { xs: "50%", md: "unset" },
+                        display: { xs: "flex", md: "none" },
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Card
+                        elevation={1}
+                        sx={{
+                          width: "100%",
+                          minHeight: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: mode === "dark" ? "#181818" : "#fff",
+                          color: mode === "dark" ? "#fff" : "#000",
+                          cursor: "pointer",
+                          "&:hover": {
+                            transform: "translateY(-2px)",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                          },
+                          transition: "all 0.3s ease",
+                          borderRadius: 0,
+                        }}
+                        onClick={() =>
+                          navigate(
+                            `/products?category=${encodeURIComponent(
+                              section.key
+                            )}`
+                          )
+                        }
+                      >
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          SEE MORE →
+                        </Typography>
+                      </Card>
+                    </Box>
+                  )}
+                </Box>
+              </Container>
+            </Box>
+          )
+      )}
 
       {/* Features Section */}
       <Box
@@ -1767,7 +1228,7 @@ useEffect(() => {
         </Container>
       </Box>
 
-      {/* Premium Membership Banner - Only show if user is not subscribed */}
+      {/* Premium Membership Banner */}
       {!profileLoading && !isSubscribed && (
         <Box
           sx={{
@@ -1804,7 +1265,6 @@ useEffect(() => {
               }}
             >
               <Grid container spacing={4} alignItems="center">
-
                 <Grid item xs={12} md={6}>
                   <Box
                     sx={{
@@ -1992,49 +1452,46 @@ useEffect(() => {
                 </Grid>
               </Grid>
               <Box
-  sx={{
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    backdropFilter: "blur(8px)",
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
-    zIndex: 10,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "column",
-    textAlign: "center",
-    borderRadius: 2,
-  }}
->
-<Typography
-  variant="h4"
-  sx={{
-    color: "#181818",
-    fontWeight: 700,
-    mb: 1,
-    fontSize: { xs: "2.5rem", md: "3rem" },
-  }}
->
-Launching Soon
-</Typography>
-<Typography
-  variant="subtitle1"
-  sx={{
-    color: "#181818",
-    fontWeight: 500,
-    fontSize: { xs: "1.5rem", md: "2rem" },
-  }}
->
-  {`${timeLeft.days}d ${timeLeft.hours}h ${timeLeft.minutes}m ${timeLeft.seconds}s`}
-</Typography>
-
-</Box>
-
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  backdropFilter: "blur(8px)",
+                  backgroundColor: "rgba(255, 255, 255, 0.5)",
+                  zIndex: 10,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexDirection: "column",
+                  textAlign: "center",
+                  borderRadius: 2,
+                }}
+              >
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: "#181818",
+                    fontWeight: 700,
+                    mb: 1,
+                    fontSize: { xs: "2.5rem", md: "3rem" },
+                  }}
+                >
+                  Launching Soon
+                </Typography>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    color: "#181818",
+                    fontWeight: 500,
+                    fontSize: { xs: "1.5rem", md: "2rem" },
+                  }}
+                >
+                  {`${timeLeft.days}d ${timeLeft.hours}h ${timeLeft.minutes}m ${timeLeft.seconds}s`}
+                </Typography>
+              </Box>
             </Paper>
-
           </Container>
         </Box>
       )}
