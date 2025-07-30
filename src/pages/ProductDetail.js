@@ -286,7 +286,7 @@ const ProductDetail = ({ mode }) => {
               <Box
                 sx={{
                   position: "relative",
-                  border: `1px solid ${mode === "dark" ? "#444" : "#eee"}`,
+                  border: `1px solid ${mode === "dark" ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)"}`,
                   borderRadius: { xs: 0, md: 2 },
                   overflow: "hidden",
                   width: "100%",
@@ -377,7 +377,7 @@ const ProductDetail = ({ mode }) => {
                       cursor: "pointer",
                       border:
                         mainImageIndex === index
-                          ? `2px solid ${mode === "dark" ? "#fff" : matteColors[900]}`
+                          ? `2px solid ${mode === "dark" ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)"}`
                           : "2px solid transparent",
                       borderRadius: 1,
                       overflow: "hidden",
@@ -669,7 +669,7 @@ const ProductDetail = ({ mode }) => {
                 onClick={handleWishlistToggle}
                 sx={{
                   py: 1.5,
-                  borderColor: mode === "dark" ? "#fff" : matteColors[900],
+                  borderColor: mode === "dark" ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)",
                   color: mode === "dark" ? "#fff" : matteColors[900],
                   borderRadius: 1,
                   mb: 3,
@@ -687,7 +687,7 @@ const ProductDetail = ({ mode }) => {
               {/* Delivery Pincode Check */}
               <Box
                 sx={{
-                  border: `1px solid ${mode === "dark" ? "#444" : matteColors[600]}`,
+                  border: `1px solid ${mode === "dark" ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)"}`,
                   borderRadius: 1,
                   p: 2,
                   bgcolor: mode === "dark" ? "#222" : "#fff",
@@ -712,13 +712,13 @@ const ProductDetail = ({ mode }) => {
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         "& fieldset": {
-                          borderColor: mode === "dark" ? "#444" : matteColors[600],
+                          borderColor: mode === "dark" ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)",
                         },
                         "&:hover fieldset": {
-                          borderColor: mode === "dark" ? "#fff" : matteColors[900],
+                          borderColor: mode === "dark" ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)",
                         },
                         "&.Mui-focused fieldset": {
-                          borderColor: mode === "dark" ? "#fff" : matteColors[900],
+                          borderColor: mode === "dark" ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)",
                         },
                         color: mode === "dark" ? "#fff" : matteColors[900],
                       },
