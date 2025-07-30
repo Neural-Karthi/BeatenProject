@@ -394,13 +394,13 @@ const Orders = ({ mode }) => {
           Refresh Orders
         </Button>
         <Button
-          variant="contained"
+           variant="outlined"
           onClick={() => navigate("/returns")}
           sx={{
-            bgcolor: mode === "dark" ? "#FFD700" : matteColors[900],
-            color: mode === "dark" ? "#000" : "white",
+            borderColor: mode === "dark" ? "#fff" : "inherit",
+            color: mode === "dark" ? "#fff" : "inherit",
             "&:hover": {
-              bgcolor: mode === "dark" ? "#FFC700" : matteColors[800],
+              backgroundColor: mode === "dark" ? "rgba(255,255,255,0.1)" : "inherit",
             },
           }}
         >
