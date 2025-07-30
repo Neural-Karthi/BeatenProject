@@ -217,7 +217,7 @@ const Payment = ({ mode = "dark" }) => {
     document.body.appendChild(script);
     script.onload = async () => {
       const options = {
-        key: process.env.REACT_APP_RAZOR_KEY || "rzp_test_ftcTPKoHNzJjbG", // Razorpay test key
+        key: process.env.REACT_APP_RAZOR_KEY || "rzp_live_XsYuuwiT3A1fT2", // Razorpay test key
         amount: Math.round(total * 100),
         currency: "INR",
         name: "PK Trends",
