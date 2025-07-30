@@ -34,7 +34,7 @@ import { useAuth } from "../../context/AuthContext";
 const pages = [
   { name: "HOME", path: "/" },
   { name: "PRODUCTS", path: "/products" },
-  { name: "PREMIUM", path: "/premium" },
+  { name: "BEATEN CLUB", path: "/beaten-club" },
   { name: "ABOUT", path: "/about" },
   { name: "CONTACT", path: "/contact" },
 ];
@@ -50,13 +50,13 @@ const mobilePages = {
       name: "BEATEN SINGNATURE",
       path: "/products?collection=Beaten%20Signature%20Collection",
     },
-    { name: "PREMIUM", path: "/premium" },
+    { name: "Beaten CLUB", path: "/beaten-club" },
   ],
   account: [
     { name: "MY ACCOUNT", path: "/profile" },
     { name: "MY ORDERS", path: "/orders" },
     { name: "WISHLIST", path: "/wishlist" },
-    { name: "RETURN / EXCHANGE", path: "/return-exchange" },
+    { name: "RETURN / EXCHANGE", path: "/returns" },
   ],
   support: [
     { name: "ABOUT", path: "/about" },

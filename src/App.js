@@ -194,25 +194,25 @@ useEffect(() => {
   return () => clearTimeout(timer);
 }, []);
 
-  const handleMoveToCart = (item) => {
-    // TODO: implement move to cart logic
-  };
+  // const handleMoveToCart = (item) => {
+  //   // TODO: implement move to cart logic
+  // };
 
-  const handleRemoveFromSaved = (item) => {
-    // TODO: implement remove from saved logic
-  };
+  // const handleRemoveFromSaved = (item) => {
+  //   // TODO: implement remove from saved logic
+  // };
 
-  const setAddressDialog = (open) => {
-    // TODO: implement address dialog logic
-  };
+  // const setAddressDialog = (open) => {
+  //   // TODO: implement address dialog logic
+  // };
 
-  const handleEditAddress = (address) => {
-    // TODO: implement edit address logic
-  };
+  // const handleEditAddress = (address) => {
+  //   // TODO: implement edit address logic
+  // };
 
-  const handleDeleteAddress = (address) => {
-    // TODO: implement delete address logic
-  };
+  // const handleDeleteAddress = (address) => {
+  //   // TODO: implement delete address logic
+  // };
 
 
 
@@ -273,7 +273,7 @@ useEffect(() => {
                         path="reset-password"
                         element={<ResetPassword mode={mode} />}
                       />
-                      <Route path="premium" element={<Premium mode={mode} />} />
+                      <Route path="beaten-club" element={<Premium mode={mode} />} />
                       <Route path="about" element={<About mode={mode} />} />
                       <Route path="contact" element={<Contact mode={mode} />} />
                       <Route

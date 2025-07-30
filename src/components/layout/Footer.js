@@ -49,7 +49,7 @@ const Footer = () => {
         { text: 'Products', to: '/products' },
         { text: "Beaten Exclusive", to: "/products?collection=Beaten%20Exclusive%20Collection"},
         { text: "Beaten Signature",to: "/products?collection=Beaten%20Signature%20Collection",},
-        { text: 'Beaten Club', to: '/premium' }
+        { text: 'Beaten Club', to: '/beaten-club' }
       ]
     },
     {
@@ -69,7 +69,6 @@ const Footer = () => {
         { text: 'Shipping', to: '/shipping' },
         { text: 'Returns', to: '/returns' },
         { text: 'Size Guide', to: '/size-guide' },
-        { text: 'Track Your Order', to: '/track-order' }
       ]
     }
   ];

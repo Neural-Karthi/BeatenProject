@@ -33,6 +33,7 @@ import {
   Add as AddIcon,
   Remove as RemoveIcon,
   FavoriteBorder as FavoriteBorderIcon,
+  Favorite as FavoriteIcon,
   LocalShippingOutlined as ShippingIcon,
   CheckCircleOutline as CheckIcon,
   ExpandMore as ExpandMoreIcon,
@@ -97,42 +98,45 @@ const ProductDetail = ({ mode }) => {
   const [pincode, setPincode] = useState("");
   const [deliveryInfo, setDeliveryInfo] = useState(null);
   const [cartMessage, setCartMessage] = useState("");
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const isWishlisted = isInWishlist(productId);
 
   const handleWishlistToggle = () => {
+    setIsAnimating(true);
     if (isWishlisted) {
       removeFromWishlist(productId);
     } else {
       addToWishlist({ ...product, _id: productId });
     }
+    // Reset animation after 300ms
+    setTimeout(() => setIsAnimating(false), 300);
   };
 
- const handlePincodeCheck = () => {
-  if (pincode.length === 6) {
-    const today = new Date();
-    const day = today.getDay(); // Sunday = 0, Saturday = 6
+  const handlePincodeCheck = () => {
+    if (pincode.length === 6) {
+      const today = new Date();
+      const day = today.getDay(); // Sunday = 0, Saturday = 6
 
-    const deliveryDate = new Date(today);
-    const addDays = (day === 0 || day === 6) ? 8 : 6;
-    deliveryDate.setDate(deliveryDate.getDate() + addDays);
+      const deliveryDate = new Date(today);
+      const addDays = (day === 0 || day === 6) ? 8 : 6;
+      deliveryDate.setDate(deliveryDate.getDate() + addDays);
 
-    const formattedDate = deliveryDate.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    }).replace(',', '');
+      const formattedDate = deliveryDate.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }).replace(',', '');
 
-    setDeliveryInfo({
-      date: formattedDate, // Only the formatted date like "12 Jul 2025"
-      cod: "Available",
-    });
-  } else {
-    setDeliveryInfo(null);
-  }
-};
-
+      setDeliveryInfo({
+        date: formattedDate,
+        cod: "Available",
+      });
+    } else {
+      setDeliveryInfo(null);
+    }
+  };
 
   const [reviews, setReviews] = useState([]);
   const [userRating, setUserRating] = useState(0);
@@ -661,11 +665,27 @@ const ProductDetail = ({ mode }) => {
                 </Grid>
               </Grid>
 
-              {/* Wishlist Button */}
+              {/* Wishlist Button with Animation */}
               <Button
                 fullWidth
                 variant="outlined"
-                startIcon={<FavoriteBorderIcon />}
+                startIcon={
+                  isWishlisted ? (
+                    <FavoriteIcon
+                      sx={{
+                        color: mode === "dark" ? "#ff6666" : "red",
+                        animation: isAnimating ? "heartPulse 0.3s ease-in-out" : "none",
+                      }}
+                    />
+                  ) : (
+                    <FavoriteBorderIcon
+                      sx={{
+                        color: mode === "dark" ? "#fff" : matteColors[900],
+                        animation: isAnimating ? "heartPulse 0.3s ease-in-out" : "none",
+                      }}
+                    />
+                  )
+                }
                 onClick={handleWishlistToggle}
                 sx={{
                   py: 1.5,
@@ -679,6 +699,11 @@ const ProductDetail = ({ mode }) => {
                   },
                   transition: "all 0.3s ease",
                   fontWeight: 600,
+                  "@keyframes heartPulse": {
+                    "0%": { transform: "scale(1)", opacity: 1 },
+                    "50%": { transform: "scale(1.5)", opacity: 0.7 },
+                    "100%": { transform: "scale(1)", opacity: 1 },
+                  },
                 }}
               >
                 {isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
@@ -687,9 +712,6 @@ const ProductDetail = ({ mode }) => {
               {/* Delivery Pincode Check */}
               <Box
                 sx={{
-                  border: `1px solid ${mode === "dark" ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)"}`,
-                  borderRadius: 1,
-                  p: 2,
                   bgcolor: mode === "dark" ? "#222" : "#fff",
                 }}
               >

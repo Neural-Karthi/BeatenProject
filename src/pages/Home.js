@@ -71,7 +71,6 @@ const Home = ({ mode }) => {
   const [hoodies, setHoodies] = useState([]);
   const [coOrdSets, setCoOrdSets] = useState([]);
   const [shopByCategory, setShopByCategory] = useState([]);
-  var categoryProducts = [];
 
   // Refs for each section
   const sectionRefs = {
@@ -273,7 +272,7 @@ const Home = ({ mode }) => {
       }
     }, 3000);
     return () => clearInterval(timer);
-  }, [isHovered]);
+  }, [isHovered, collections.length]);
 
   const scrollToContent = () => {
     window.scrollTo({
@@ -422,6 +421,7 @@ const Home = ({ mode }) => {
             }}
           />
         ))}
+        {/* Slide Indicators */}
         <Box
           sx={{
             position: "absolute",
@@ -438,8 +438,8 @@ const Home = ({ mode }) => {
               key={index}
               onClick={() => setCurrentSlide(index)}
               sx={{
-                width: 12,
-                height: 12,
+                width: 8,
+                height: 8,
                 borderRadius: "50%",
                 backgroundColor:
                   currentSlide === index ? "white" : "rgba(255,255,255,0.5)",
@@ -452,6 +452,43 @@ const Home = ({ mode }) => {
             />
           ))}
         </Box>
+        {/* Learn More Button (Only on First Slide) */}
+        {currentSlide === 0 && (
+          <Button
+            variant="contained"
+            size={isMobile ? "large" : "medium"}
+            onClick={() => navigate("/beaten-club")}
+            sx={{
+              position: "absolute",
+              bottom: { xs: 60, sm: 80 },
+              left: "50%",
+              transform: "translateX(-50%)",
+              background:
+                mode === "dark"
+                  ? "#fff"
+                  : "#fff",
+              color: mode === "dark" ? "#000" : "#000",
+              py: isMobile ? 1.2 : 1,
+              px: isMobile ? 3 : 4,
+              fontSize: { xs: "0.7rem", md: "0.9rem" },
+              borderRadius: 10,
+              zIndex: 3,
+              "&:hover": {
+                background:
+                  mode === "dark"
+                    ? "#fff"
+                    : "#fff",
+                transform: "translateY(-2px) translateX(-50%)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              },
+              transition: "all 0.3s ease",
+              whiteSpace: "nowrap",
+            }}
+          >
+            LEARN MORE
+          </Button>
+        )}
+        {/* Scroll to Content Arrow */}
         <Box
           onClick={scrollToContent}
           sx={{
@@ -1186,7 +1223,7 @@ const Home = ({ mode }) => {
         <Container maxWidth="xl">
           <Grid container spacing={2}>
             {featuresWithIcons.map((feature, index) => (
-              <Grid item xs={6} md={3} key={index}>
+              <Grid item xs={6} md= {3} key={index}>
                 <Box
                   sx={{
                     textAlign: "center",
@@ -1394,8 +1431,7 @@ const Home = ({ mode }) => {
                               display: "flex",
                               alignItems: "center",
                               mb: 1.5,
-                              color: mode === "dark" ? "fff" : "181818",
-                              bgcolor: mode === "dark" ? "fff" : "181818",
+                              color: "white",
                             }}
                           >
                             <svg

@@ -202,6 +202,14 @@ const Payment = ({ mode = "dark" }) => {
     }
   };
 
+  const handleCouponClick = (couponCode) => {
+    setCoupon(couponCode);
+    setCouponError("");
+    if (couponApplied) {
+      handleRemoveCoupon();
+    }
+  };
+
   const handleRazorpay = async () => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
@@ -368,7 +376,7 @@ const Payment = ({ mode = "dark" }) => {
               <Typography variant="subtitle1" gutterBottom sx={{ color: cardColors.text }}>
                 Apply Coupon
               </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 , mt: 2}}>
                 <TextField
                   label="Coupon Code"
                   value={coupon}
@@ -433,14 +441,7 @@ const Payment = ({ mode = "dark" }) => {
                       Coupon applied successfully!
                     </Typography>
                     <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-                      <Chip
-                        label={appliedCoupon.isPersonal ? "Personal" : ""}
-                        color={
-                          appliedCoupon.isPersonal ? "primary" : "secondary"
-                        }
-                        size="small"
-                        sx={{ mr: 1 }}
-                      />
+                      
                       <Typography variant="body2">
                         {appliedCoupon.discountType === "flat"
                           ? `Flat ₹${appliedCoupon.discount} off`
@@ -481,18 +482,23 @@ const Payment = ({ mode = "dark" }) => {
               </Button>
             </Box>
             {showOffers && availableCoupons.length > 0 && (
-              <Box sx={{ mt: 2 }}>
+              <Box sx={{ mt: 2, mb: 2 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: cardColors.text }}>
                   Coupons
                 </Typography>
                 {availableCoupons.map((coupon) => (
                   <Paper
                     key={coupon.code}
+                    onClick={() => handleCouponClick(coupon.code)}
                     sx={{ 
                       p: 2, 
                       mb: 1, 
                       bgcolor: mode === "dark" ? "#1a1a1a" : "#f5f5f5",
                       border: mode === "dark" ? "1px solid rgba(255,255,255,0.1)" : "none",
+                      cursor: "pointer",
+                      "&:hover": {
+                        bgcolor: mode === "dark" ? "#2d2d2d" : "#e0e0e0",
+                      },
                     }}
                   >
                     <Typography variant="body2" sx={{ fontWeight: 600, color: cardColors.text }}>

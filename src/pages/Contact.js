@@ -540,7 +540,6 @@ const Contact = ({ mode }) => {
                           variant="contained"
                           size={isMobile ? "large" : "medium"}
                           disabled={isSubmitting}
-                          startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
                           sx={{
                             backgroundColor: mode === "dark" ? "#ffffff" : matteColors[900],
                             color: mode === "dark" ? matteColors[900] : "#ffffff",
